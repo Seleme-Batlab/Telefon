@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kasiyer — BatLab </title>
+<title>Kasiyer —</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -23,7 +23,7 @@
            collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot }
     from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-const firebaseConfig = {
+ const firebaseConfig = {
     apiKey: "AIzaSyDiXog4yaxyMS64lQ3T2ZEitr_4e9NtSCA",
     authDomain: "mobile-manager-4a9a9.firebaseapp.com",
     projectId: "mobile-manager-4a9a9",
@@ -32,7 +32,6 @@ const firebaseConfig = {
     appId: "1:517550316753:web:15bddc3385b6a97b6bb9f0",
     measurementId: "G-393HKJNRDL"
   };
-
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   window._auth = auth;
@@ -91,7 +90,7 @@ const firebaseConfig = {
     if(!el) return;
     el.innerHTML = on
       ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:3px 10px"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;animation:livePulse 1.4s ease-in-out infinite"></span>Canlı</span>`
-      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:20px;padding:3px 10px"><span style="width:7px;height:7px;border-radius:50%;background:var(--c-text3);display:inline-block"></span>Çevrimdışı</span>`;
+      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:20px;padding:3px 10px"><span style="width:7px;height:7px;border-radius:50%;background:var(--c-text3);display:inline-block"></span>Bağlı değil</span>`;
   }
 
   function subscribeRealtime() {
@@ -105,9 +104,9 @@ const firebaseConfig = {
       query(collection(db,'products'), where('userId','==',uid)),
       (snap) => {
         window.state.products = snap.docs.map(d=>({id:d.id,...d.data()}))
-          .sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+          .sort((a,b)=> (b.createdAt||'') > (a.createdAt||'') ? 1 : -1);
         populateDropdown();
-        // refresh available qty badge if a product is selected
+        // Ürün seçiliyse mevcut miktar rozetini yenile
         const pid = document.getElementById('quickProduct')?.value;
         if(pid) updateQuickSale();
         showLoading(false);
@@ -122,20 +121,20 @@ const firebaseConfig = {
       query(collection(db,'sales'), where('userId','==',uid)),
       (snap) => {
         window.state.sales = snap.docs.map(d=>({id:d.id,...d.data()}))
-          .sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||''));
+          .sort((a,b)=> (b.date||'') > (a.date||'') ? 1 : -1);
         renderSales();
       },
       (err) => { showToast('Satış hatası: '+err.message,'error'); }
     );
   }
 
-  // keep backward compat if anything calls loadAllData
+  // loadAllData çağıran eski kodlar için uyumluluk
   async function loadAllData() { subscribeRealtime(); }
 
   function populateDropdown() {
     const sel = document.getElementById('quickProduct');
     if(!sel) return;
-    sel.innerHTML = '<option value="">-- Ürün Seçin --</option>' +
+    sel.innerHTML = '<option value="">-- Ürün seçin --</option>' +
       window.state.products.map(p =>
         `<option value="${p.id}">${p.name} (${p.qty})</option>`
       ).join('');
@@ -170,11 +169,11 @@ const firebaseConfig = {
     const qty = parseInt(document.getElementById('quickQty')?.value)||1;
     if(qty > p.qty){showToast('Mevcut miktar: '+p.qty,'error');return;}
     const priceUSD = parseFloat(document.getElementById('quickPriceUSD')?.value)||0;
-    if(!priceUSD){showToast('Satış fiyatını girin','error');return;}
+    if(!priceUSD){showToast('Satış fiyatı girin','error');return;}
     const buyUSD = p.currency==='usd' ? p.buyPrice : p.buyPrice/st.rate;
     if(priceUSD <= buyUSD){
       const diff = ((buyUSD-priceUSD)*st.rate).toFixed(0);
-      showToast(`⚠️ Satış fiyatı maliyetten ₺${diff} düşük!`,'error');
+      showToast(`⚠️ Satış fiyatı maliyetten ₺ düşük${diff}!`,'error');
       return;
     }
     const customer = document.getElementById('quickCustomer')?.value||'';
@@ -189,11 +188,11 @@ const firebaseConfig = {
     try {
       const salesCol = collection(db,'sales');
       await addDoc(salesCol, saleData);
-      // لا نضيف يدوياً — الـ onSnapshot سيتكفل بالتحديث تلقائياً
+      // Manuel ekleme yok — onSnapshot otomatik günceller
       await updateDoc(doc(db,'products',pid),{qty:p.qty-qty});
       const idx = st.products.findIndex(x=>x.id===pid);
       st.products[idx].qty -= qty;
-      // reset form
+      // Formu sıfırla
       document.getElementById('quickProduct').value = '';
       document.getElementById('quickQty').value = '1';
       document.getElementById('quickPriceTRY').value = '';
@@ -219,7 +218,7 @@ const firebaseConfig = {
   // ======= DELETE / EDIT SALE =======
   window.deleteSale = async (saleId) => {
     if(window._busy){showToast('İşlem devam ediyor...','error');return;}
-    if(!confirm('Bu işlemi kalıcı olarak sil?')) return;
+    if(!confirm('Bu işlemi kalıcı olarak silmek istiyor musunuz?')) return;
     const sale = window.state.sales.find(s=>s.id===saleId);
     if(!sale) return;
     setBusy(true,'Siliniyor...');
@@ -233,7 +232,7 @@ const firebaseConfig = {
           window.state.products[pIdx].qty = newQty;
         }
       }
-      // لا نحذف يدوياً — الـ onSnapshot سيتكفل بالتحديث تلقائياً
+      // Manuel silme yok — onSnapshot otomatik günceller
       populateDropdown();
       showToast('İşlem silindi ✓','success');
     } catch(e){showToast('Hata: '+e.message,'error');}
@@ -248,10 +247,10 @@ const firebaseConfig = {
         <div class="modal-title">İşlemi Düzenle</div>
         <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
-      <div class="fg"><label>Ürün Adı</label><input id="esProdName" value="${s.productName||''}" placeholder="Ürün Adı"></div>
+      <div class="fg"><label>Ürün adı</label><input id="esProdName" value="${s.productName||''}" placeholder="Ürün adı"></div>
       <div class="form-row">
         <div class="fg"><label>Miktar</label><input type="number" id="esQty" value="${s.qty||1}" min="1"></div>
-        <div class="fg"><label>Satış Fiyatı (USD)</label>
+        <div class="fg"><label>Satış fiyatı (USD)</label>
           <div style="display:flex;gap:8px">
             <div class="price-cur-badge">USD $</div>
             <input type="number" id="esPrice" value="${s.price||0}" step="0.01"
@@ -260,7 +259,7 @@ const firebaseConfig = {
         </div>
       </div>
       <div class="fg"><label>Tarih</label><input type="date" id="esDate" value="${s.date||''}"></div>
-      <div class="fg"><label>Müşteri Adı (İsteğe bağlı)</label><input id="esCustomer" value="${s.customer||''}" placeholder="Müşteri Adı"></div>
+      <div class="fg"><label>Müşteri adı (isteğe bağlı)</label><input id="esCustomer" value="${s.customer||''}" placeholder="Müşteri adı"></div>
       <button class="btn-primary" style="width:100%;justify-content:center;margin-top:10px" onclick="saveSaleEdit('${saleId}')">
         <i class="ti ti-check"></i> Değişiklikleri Kaydet
       </button>`);
@@ -277,7 +276,7 @@ const firebaseConfig = {
     setBusy(true,'Kaydediliyor...');
     try {
       await updateDoc(doc(db,'sales',saleId),{productName,qty,price,date,customer});
-      // لا نحدث يدوياً — الـ onSnapshot سيتكفل بالتحديث تلقائياً
+      // Manuel güncelleme yok — onSnapshot otomatik günceller
       closeModal();
       showToast('Düzenlendi ✓','success');
     } catch(e){showToast('Hata: '+e.message,'error');}
@@ -339,7 +338,7 @@ const firebaseConfig = {
           </button>
         </div>
       </div>`;
-    }).join('') : `<div class="empty"><i class="ti ti-receipt"></i><p>Satış bulunamadı</p></div>`;
+    }).join('') : `<div class="empty"><i class="ti ti-receipt"></i><p>Satış yok</p></div>`;
   };
 
   // ======= FILTER =======
@@ -439,7 +438,7 @@ const firebaseConfig = {
       Bat<span>Lab</span> ai
     </div>
     <div class="login-sub">Kasiyer — Satış Sistemi</div>
-    <div class="fg"><label>E-posta</label><input type="email" id="loginEmail" placeholder="example@email.com"></div>
+    <div class="fg"><label>E-posta</label><input type="email" id="loginEmail" placeholder="ornek@email.com"></div>
     <div class="fg"><label>Şifre</label><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-primary" id="loginBtn" onclick="doLogin()" style="width:100%;justify-content:center;">
       <i class="ti ti-login"></i> Giriş
@@ -454,25 +453,28 @@ const firebaseConfig = {
   <div class="cashier-topbar">
     <div class="cashier-logo" style="gap:10px">
       <img src="logo website.png" alt="BatLab" style="width:36px;height:36px;border-radius:10px;object-fit:contain">
-      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px">Bat<span style="color:var(--c-primary-bright)">Lab</span>  </span>
+      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px"> seleme web  </span>
     </div>
 
-    <!-- Ana Sekmeler -->
+    <!-- Ana sekmeler -->
     <div class="topbar-tabs">
       <button class="topbar-tab active" data-page="sale" onclick="showPage('sale')">
         <i class="ti ti-shopping-cart"></i> Satış Kaydet
       </button>
+      <button class="topbar-tab" data-page="profit" onclick="showPage('profit')">
+        <i class="ti ti-coins"></i> Kâr Kaydet
+      </button>
       <button class="topbar-tab" data-page="sales" onclick="showPage('sales')">
-        <i class="ti ti-receipt"></i> Satış Kaydı
+        <i class="ti ti-receipt"></i> Satış Geçmişi
       </button>
     </div>
 
-    <!-- Canlı Göstergesi -->
+    <!-- Canlı göstergesi -->
     <div id="liveIndicator" style="display:flex;align-items:center"></div>
 
-    <!-- Eylemler -->
+    <!-- İşlemler -->
     <div class="topbar-actions">
-      <button onclick="toggleTheme()" title="Tema Değiştir"
+      <button onclick="toggleTheme()" title="Tema değiştir"
         style="padding:6px 8px;background:transparent;border:1px solid var(--c-border);border-radius:8px;cursor:pointer;color:var(--c-text2);font-size:15px;display:flex;align-items:center">
         <i class="ti ti-sun" id="themeIcon"></i>
       </button>
@@ -491,10 +493,10 @@ const firebaseConfig = {
     <!-- ===== SALE PAGE ===== -->
     <div class="page active" id="page-sale">
 
-      <!-- Dolar Kuru -->
+      <!-- Dolar kuru -->
       <div class="card" style="margin-bottom:16px;padding:14px 18px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="font-size:11px;color:var(--c-text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Dolar Kuru ₺/$</div>
+          <div style="font-size:11px;color:var(--c-text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Dolar kuru ₺/$</div>
           <div style="display:flex;align-items:center;gap:6px;flex:1;max-width:220px">
             <input type="number" id="rateInput" step="0.1" min="1"
               style="flex:1;padding:7px 10px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;font-weight:700"
@@ -510,18 +512,35 @@ const firebaseConfig = {
       <!-- Ürün -->
       <div class="sale-form-card">
         <div class="sale-form-title"><i class="ti ti-box"></i> Ürün</div>
+
+        <!-- Ada göre ara -->
+        <div style="position:relative;margin-bottom:10px">
+          <i class="ti ti-search" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--c-text3);pointer-events:none;z-index:1"></i>
+          <input type="text" id="cashierNameSearch"
+            placeholder="Ürün adıyla ara..."
+            autocomplete="off"
+            style="width:100%;padding:13px 40px 13px 14px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;box-sizing:border-box;transition:border-color .2s;outline:none"
+            oninput="cashierFilterByName(this.value)"
+            onfocus="cashierFilterByName(this.value);this.style.borderColor='rgba(99,102,241,0.55)'"
+            onblur="setTimeout(function(){cashierHideDD()},180);this.style.borderColor='var(--c-border)'"
+            onkeydown="cashierHandleKey(event)">
+          <div id="cashierNameDD"
+            style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--radius-sm);z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)">
+          </div>
+        </div>
+
         <div style="display:flex;gap:8px">
           <div style="flex:1">
-            <select id="quickProduct" style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif" onchange="updateQuickSale()">
-              <option value="">-- Ürün Seçin --</option>
+            <select id="quickProduct" style="display:none" onchange="updateQuickSale()">
+              <option value="">-- Ürün seçin --</option>
             </select>
             <div id="quickAvailQty" style="display:none;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--c-text2);margin-top:6px;padding:6px 10px;background:var(--c-bg3);border-radius:var(--radius-sm);border:1px solid var(--c-border)"></div>
           </div>
-          <button onclick="toggleBarcodeInput()" title="Manuel Barkod"
+          <button onclick="toggleBarcodeInput()" title="Manuel barkod"
             style="background:var(--c-bg2);border:0.5px solid var(--c-border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;color:var(--c-text2);display:flex;align-items:center;gap:5px;cursor:pointer">
             <i class="ti ti-keyboard"></i>
           </button>
-          <button onclick="startCameraScanner()" title="Kamera ile Tara"
+          <button onclick="startCameraScanner()" title="Kamerayla tara"
             style="background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(99,102,241,0.2));border:1px solid rgba(59,130,246,0.4);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--c-primary-bright);display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:700">
             <i class="ti ti-camera" style="font-size:16px"></i> Kamera
           </button>
@@ -529,10 +548,10 @@ const firebaseConfig = {
 
         <!-- Manuel -->
         <div id="barcodeInputWrap" style="display:none;margin-top:8px">
-          <input type="text" id="barcodeInput" placeholder="Barkodu girin..."
+          <input type="text" id="barcodeInput" placeholder="Barkod yazın..."
             style="width:100%;padding:10px 12px;border:1px solid var(--c-primary);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:14px;font-family:'JetBrains Mono',monospace"
             oninput="searchByBarcode(this.value)" onkeydown="if(event.key==='Escape')toggleBarcodeInput()">
-          <div style="font-size:11px;color:var(--c-text3);margin-top:4px">İptal için ESC</div>
+          <div style="font-size:11px;color:var(--c-text3);margin-top:4px">İptal için ESC tuşuna basın</div>
         </div>
 
         <!-- Kamera -->
@@ -554,24 +573,26 @@ const firebaseConfig = {
         </div>
       </div>
 
-      <!-- Miktar ve Fiyat -->
+      <!-- Miktar ve fiyat -->
       <div class="sale-form-card">
-        <div class="form-row" style="margin-bottom:14px">
-          <div>
-            <div class="sale-form-title"><i class="ti ti-123"></i> Miktar</div>
+        <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">
+          <!-- Miktar -->
+          <div style="flex:0 0 110px">
+            <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-123"></i> Miktar</div>
             <input type="number" id="quickQty" value="1" min="1"
-              style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:16px;font-family:'Cairo',sans-serif;text-align:center"
+              style="width:100%;padding:14px 10px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:26px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box"
               oninput="updateQuickSale()">
           </div>
-          <div>
-            <div class="sale-form-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">
+          <!-- Satış fiyatı -->
+          <div style="flex:1">
+            <div class="sale-form-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px">
               <span><i class="ti ti-tag"></i> Satış Fiyatı</span>
               <span id="quickRefPriceBadge" style="display:none;font-size:11px;font-weight:600;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:12px;padding:2px 9px;white-space:nowrap"></span>
             </div>
-            <div class="price-row">
-              <div class="price-cur-badge">₺</div>
+            <div style="display:flex;align-items:center;gap:6px;background:rgba(99,102,241,0.08);border:2px solid rgba(99,102,241,0.45);border-radius:var(--radius-sm);padding:4px 10px">
+              <span style="font-size:22px;font-weight:800;color:var(--c-primary-bright);flex-shrink:0">₺</span>
               <input type="number" id="quickPriceTRY" placeholder="0"
-                style="flex:1;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;font-weight:700"
+                style="flex:1;border:none;outline:none;background:transparent;color:var(--c-text);font-size:34px;font-family:'Cairo',sans-serif;font-weight:800;width:100%;min-width:0;padding:8px 0"
                 oninput="syncQuickPrice('try')">
             </div>
             <input type="hidden" id="quickPriceUSD" value="">
@@ -579,14 +600,14 @@ const firebaseConfig = {
           </div>
         </div>
 
-        <!-- hidden cost fields (used internally) -->
+        <!-- Gizli maliyet alanları (dahili kullanım) -->
         <input type="hidden" id="quickCostUSD">
         <input type="hidden" id="quickCostTRY">
 
         <!-- Müşteri -->
         <div style="margin-bottom:14px">
-          <div class="sale-form-title"><i class="ti ti-user"></i> Müşteri Adı (İsteğe bağlı)</div>
-          <input type="text" id="quickCustomer" placeholder="Müşteri Adı"
+          <div class="sale-form-title"><i class="ti ti-user"></i> Müşteri adı (isteğe bağlı)</div>
+          <input type="text" id="quickCustomer" placeholder="Müşteri adı"
             style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
         </div>
 
@@ -598,7 +619,7 @@ const firebaseConfig = {
         </div>
 
         <!-- Özet -->
-        <!-- hidden vals kept for internal calc -->
+        <!-- Dahili hesaplama için gizli değerler -->
         <span id="qTotal" style="display:none">$0.00</span>
         <span id="qTotalTRY" style="display:none">₺0</span>
         <span id="qProfit" style="display:none">$0.00</span>
@@ -609,15 +630,84 @@ const firebaseConfig = {
       </button>
     </div><!-- /page-sale -->
 
+    <!-- ===== PROFIT PAGE ===== -->
+    <div class="page" id="page-profit">
+
+      <div style="max-width:480px;margin:0 auto">
+
+        <!-- Header -->
+        <div style="text-align:center;margin-bottom:28px;padding-top:8px">
+          <div style="width:60px;height:60px;background:rgba(99,102,241,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:1px solid rgba(99,102,241,0.3)">
+            <i class="ti ti-coins" style="font-size:26px;color:var(--c-primary-bright)"></i>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:var(--c-text)">Kâr Kaydet</div>
+          <div style="font-size:13px;color:var(--c-text3);margin-top:4px">Yönetim sayfasındaki istatistiklerde görünecektir</div>
+        </div>
+
+        <!-- Kâr türü -->
+        <div class="sale-form-card" style="margin-bottom:16px">
+          <div class="sale-form-title"><i class="ti ti-category"></i> Kâr Türü</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
+            <button id="profitTypeInvoice" onclick="selectProfitType('invoice')"
+              style="padding:16px 12px;border:2px solid var(--c-primary);border-radius:12px;background:rgba(99,102,241,0.12);cursor:pointer;color:var(--c-primary-bright);font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s">
+              <i class="ti ti-file-invoice" style="font-size:26px"></i>
+              Bakiye Kârı
+            </button>
+            <button id="profitTypeMaintenance" onclick="selectProfitType('maintenance')"
+              style="padding:16px 12px;border:1px solid var(--c-border);border-radius:12px;background:var(--c-bg3);cursor:pointer;color:var(--c-text2);font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s">
+              <i class="ti ti-tool" style="font-size:26px"></i>
+              Servis Kârı
+            </button>
+          </div>
+          <input type="hidden" id="selectedProfitType" value="invoice">
+        </div>
+
+        <!-- Miktar -->
+        <div class="sale-form-card" style="margin-bottom:16px">
+          <div class="sale-form-title"><i class="ti ti-currency-lira"></i> Lira Miktarı</div>
+          <div style="position:relative;margin-top:6px">
+            <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:18px;font-weight:800;color:var(--c-text3);pointer-events:none">₺</div>
+            <input type="number" id="profitAmtTRY" placeholder="0" min="0" step="1"
+              oninput="updateProfitPreview()"
+              style="width:100%;padding:14px 36px 14px 12px;border:1px solid var(--c-border);border-radius:12px;background:var(--c-bg3);color:var(--c-text);font-size:22px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box;outline:none">
+          </div>
+          <!-- USD karşılığı -->
+          <div id="profitUSDPreview" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center">
+            <span style="font-size:13px;color:var(--c-text3)">Eşdeğer: </span>
+            <span id="profitUSDVal" style="font-size:16px;font-weight:700;color:var(--c-green)">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Not -->
+        <div class="sale-form-card" style="margin-bottom:20px">
+          <div class="sale-form-title"><i class="ti ti-notes"></i> Not (isteğe bağlı)</div>
+          <input type="text" id="profitNote" placeholder="Örnek: müşteri faturası, cihaz tamiri..."
+            style="width:100%;padding:11px 14px;border:1px solid var(--c-border);border-radius:12px;background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;box-sizing:border-box;margin-top:6px;outline:none">
+        </div>
+
+        <!-- Kaydet butonu -->
+        <button onclick="submitProfit()"
+          style="width:100%;padding:15px;background:linear-gradient(135deg,#4F46E5,#6366F1);border:none;border-radius:14px;cursor:pointer;color:#fff;font-size:16px;font-family:'Cairo',sans-serif;font-weight:800;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(99,102,241,0.35)">
+          <i class="ti ti-check" style="font-size:20px"></i> Kârı Kaydet
+        </button>
+
+        <!-- Not -->
+        <div style="margin-top:16px;padding:12px 16px;background:var(--c-bg2);border:1px solid var(--c-border);border-radius:10px;display:flex;align-items:center;gap:10px">
+          <i class="ti ti-info-circle" style="font-size:16px;color:var(--c-primary-bright);flex-shrink:0"></i>
+         </div>
+
+      </div>
+    </div><!-- /page-profit -->
+
     <!-- ===== SALES LOG PAGE ===== -->
     <div class="page" id="page-sales">
-      <div class="page-title">Satış Kaydı</div>
+      <div class="page-title">Satış Geçmişi</div>
       <div class="tabs">
         <div class="tab active" onclick="filterSales('all',this)">Tümü</div>
         <div class="tab" onclick="filterSales('cash',this)">Nakit</div>
         <div class="tab" onclick="filterSales('debt',this)">Borç</div>
         <div class="tab" onclick="filterSales('return',this)">İade</div>
-        <div class="tab" onclick="filterSales('partial',this)">Taksitler</div>
+        <div class="tab" onclick="filterSales('partial',this)">Taksit</div>
       </div>
       <div id="salesList"></div>
     </div><!-- /page-sales -->
@@ -661,18 +751,18 @@ window.updateQuickSale = () => {
     const low   = p.qty < 5;
     const color = p.qty===0?'var(--c-red)':low?'var(--c-amber)':'var(--c-green)';
     qtyBadge.style.display = 'flex';
-    qtyBadge.innerHTML = `<i class="ti ti-package" style="font-size:13px;margin-left:4px"></i> Mevcut Miktar: <b style="color:${color};margin-right:4px">${p.qty}</b>${p.qty===0?'<span style="color:var(--c-red)"> — Stok tükendi</span>':low?'<span style="color:var(--c-amber)"> — Düşük stok</span>':''}`;
+    qtyBadge.innerHTML = `<i class="ti ti-package" style="font-size:13px;margin-left:4px"></i> Mevcut miktar: <b style="color:${color};margin-right:4px">${p.qty}</b>${p.qty===0?'<span style="color:var(--c-red)"> — Stok tükendi</span>':low?'<span style="color:var(--c-amber)"> — Düşük stok</span>':''}`;
   }
   const buyUSD  = p.currency==='usd' ? p.buyPrice : p.buyPrice/st.rate;
   const sellUSD = p.currency==='usd' ? p.sellPrice : p.sellPrice/st.rate;
-  // store cost in hidden fields (used by submitQuickSale)
+  // Maliyeti gizli alanlarda sakla (submitQuickSale tarafından kullanılır)
   document.getElementById('quickCostUSD').value = buyUSD.toFixed(2);
   document.getElementById('quickCostTRY').value = (buyUSD*st.rate).toFixed(0);
-  // show reference price badge
+  // Referans fiyat rozetini göster
   const refBadge = document.getElementById('quickRefPriceBadge');
   if(refBadge){
     refBadge.style.display = 'inline-flex';
-    refBadge.textContent = `Ürün Fiyatı: ₺${(sellUSD*st.rate).toFixed(0)}`;
+    refBadge.textContent = `Ürün fiyatı: ₺${(sellUSD*st.rate).toFixed(0)}`;
   }
   document.getElementById('quickPriceTRY').value = (sellUSD*st.rate).toFixed(0);
   const u = document.getElementById('quickPriceUSD');
@@ -708,12 +798,74 @@ function recalcSummary(){
     if(priceUSD<=buyUSD){
       const diff=((buyUSD-priceUSD)*st.rate).toFixed(0);
       warnEl.style.display='block';
-      warnEl.innerHTML=`<i class="ti ti-alert-triangle"></i> Bu fiyat uygun değil! ₺${diff} zarar ediyorsun`;
+      warnEl.innerHTML=`<i class="ti ti-alert-triangle"></i> Bu fiyat olmaz! ₺ zarar ediyorsunuz${diff}`;
     } else { warnEl.style.display='none'; }
   } else if(warnEl){ warnEl.style.display='none'; }
 }
 
-// ======= BARCODE =======
+// ======= PROFIT PAGE =======
+window.selectProfitType = (type) => {
+  const invoiceBtn = document.getElementById('profitTypeInvoice');
+  const maintBtn   = document.getElementById('profitTypeMaintenance');
+  document.getElementById('selectedProfitType').value = type;
+  if(type === 'invoice'){
+    invoiceBtn.style.border = '2px solid var(--c-primary)';
+    invoiceBtn.style.background = 'rgba(99,102,241,0.12)';
+    invoiceBtn.style.color = 'var(--c-primary-bright)';
+    maintBtn.style.border = '1px solid var(--c-border)';
+    maintBtn.style.background = 'var(--c-bg3)';
+    maintBtn.style.color = 'var(--c-text2)';
+  } else {
+    maintBtn.style.border = '2px solid #10b981';
+    maintBtn.style.background = 'rgba(16,185,129,0.12)';
+    maintBtn.style.color = '#10b981';
+    invoiceBtn.style.border = '1px solid var(--c-border)';
+    invoiceBtn.style.background = 'var(--c-bg3)';
+    invoiceBtn.style.color = 'var(--c-text2)';
+  }
+};
+
+window.updateProfitPreview = () => {
+  const amt = parseFloat(document.getElementById('profitAmtTRY')?.value)||0;
+  const rate = window.state?.rate || 32.5;
+  const preview = document.getElementById('profitUSDPreview');
+  const usdVal  = document.getElementById('profitUSDVal');
+  if(amt > 0 && preview && usdVal){
+    preview.style.display = 'block';
+    usdVal.textContent = '$' + (amt/rate).toFixed(2);
+  } else if(preview){
+    preview.style.display = 'none';
+  }
+};
+
+window.submitProfit = async () => {
+  if(window._busy){ showToast('İşlem devam ediyor, lütfen bekleyin...','error'); return; }
+  const type    = document.getElementById('selectedProfitType')?.value || 'invoice';
+  const amtTRY  = parseFloat(document.getElementById('profitAmtTRY')?.value) || 0;
+  const note    = (document.getElementById('profitNote')?.value || '').trim();
+  if(!amtTRY || amtTRY <= 0){ showToast('Kâr miktarı girin','error'); return; }
+  const rate   = window.state?.rate || 32.5;
+  const amount = amtTRY / rate;
+  const uid    = window._auth?.currentUser?.uid || '';
+  const data = {
+    type, amount, amountTRY: amtTRY, note,
+    date: new Date().toISOString().split('T')[0],
+    createdAt: new Date().toISOString(),
+    userId: uid
+  };
+  setBusy(true,'Kâr kaydediliyor...');
+  try {
+    const col = window._collection(window._db,'extraProfits');
+    await window._addDoc(col, data);
+    document.getElementById('profitAmtTRY').value = '';
+    document.getElementById('profitNote').value = '';
+    document.getElementById('profitUSDPreview').style.display = 'none';
+    const typeLabel = type === 'invoice' ? 'Bakiye kârı' : 'Servis kârı';
+    showToast(`✓ ${typeLabel} kaydedildi — ₺${amtTRY.toLocaleString()}`, 'success');
+  } catch(e){ showToast('Hata: '+e.message,'error'); }
+  finally { setBusy(false); }
+};
+
 window.toggleBarcodeInput = () => {
   const wrap = document.getElementById('barcodeInputWrap');
   const inp  = document.getElementById('barcodeInput');
@@ -729,6 +881,8 @@ window.searchByBarcode = (val) => {
   if(p){
     const sel=document.getElementById('quickProduct');
     if(sel){sel.value=p.id;updateQuickSale();}
+    const nameInp = document.getElementById('cashierNameSearch');
+    if(nameInp) nameInp.value = p.name;
     document.getElementById('barcodeInputWrap').style.display='none';
     document.getElementById('barcodeInput').value='';
     showToast('Bulundu: '+p.name,'success');
@@ -746,7 +900,7 @@ window.startCameraScanner = async () => {
   wrap.style.display='block';
   document.getElementById('barcodeInputWrap').style.display='none';
   if(typeof ZXing==='undefined'){
-    if(status) status.innerHTML='<span style="color:var(--c-red)">⚠ Tarama kütüphanesi yüklenmedi</span>';
+    if(status) status.innerHTML='<span style="color:var(--c-red)">⚠ Tarama kütüphanesi yüklenemedi</span>';
     return;
   }
   try {
@@ -761,6 +915,8 @@ window.startCameraScanner = async () => {
         if(p){
           const sel=document.getElementById('quickProduct');
           if(sel){sel.value=p.id;updateQuickSale();}
+          const nameInp = document.getElementById('cashierNameSearch');
+          if(nameInp) nameInp.value = p.name;
           showToast('✓ '+p.name,'success');
         } else {
           document.getElementById('barcodeInputWrap').style.display='block';
@@ -771,16 +927,105 @@ window.startCameraScanner = async () => {
       }
     });
   } catch(e){
-    if(status) status.innerHTML=`<span style="color:var(--c-red)">⚠ Kamera erişilemedi: ${e.message}</span>`;
+    if(status) status.innerHTML=`<span style="color:var(--c-red)">⚠ Kameraya erişilemiyor: ${e.message}</span>`;
   }
 };
 
-window.stopCameraScanner = () => {
-  if(_zxingReader){try{_zxingReader.reset();}catch(e){}_zxingReader=null;}
-  const wrap=document.getElementById('cameraScannerWrap');
-  if(wrap) wrap.style.display='none';
-  const video=document.getElementById('scannerVideo');
-  if(video&&video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+// ======= CASHIER NAME SEARCH =======
+var _csIdx = -1;
+
+window.cashierFilterByName = function(val) {
+  var dd = document.getElementById('cashierNameDD');
+  if (!dd || !window.state) return;
+  var q = (val || '').trim().toLowerCase();
+  var products = window.state.products || [];
+  var filtered = q.length === 0
+    ? products.slice(0, 50)
+    : products.filter(function(p){ return p.name && p.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 50);
+
+  if (!filtered.length) {
+    dd.innerHTML = "<div style='padding:16px;font-size:14px;color:var(--c-text3);font-family:Cairo,sans-serif;text-align:center'><i class=\"ti ti-mood-sad\" style=\"font-size:20px;display:block;margin-bottom:6px;opacity:.5\"></i>Bu isimde ürün bulunamadı</div>";
+    dd.style.display = 'block';
+    _csIdx = -1;
+    return;
+  }
+
+  var rate = window.state.rate || 32.5;
+  dd.innerHTML = filtered.map(function(p, i) {
+    var qty = p.qty != null ? p.qty : 0;
+    var qtyColor = qty <= 0 ? 'var(--c-red)' : qty <= 3 ? 'var(--c-amber)' : 'var(--c-green)';
+    var sellUSD = p.currency === 'usd' ? p.sellPrice : (p.sellPrice || 0) / rate;
+    var priceBadge = sellUSD > 0
+      ? "<span style='font-size:12px;font-weight:700;color:var(--c-primary-bright);background:rgba(99,102,241,0.12);border-radius:6px;padding:2px 8px;flex-shrink:0'>₺" + Math.round(sellUSD * rate) + "</span>"
+      : '';
+    return "<div data-idx='" + i + "' data-pid='" + p.id + "'"
+      + " onmousedown='window._csSelect(\"" + p.id + "\")'"
+      + " onmouseover='window._csHover(" + i + ")'"
+      + " style='display:flex;justify-content:space-between;align-items:center;padding:13px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);font-family:Cairo,sans-serif;gap:8px' id='cs-item-" + i + "'>"
+      + "<div style='font-size:14px;font-weight:600;color:var(--c-text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" + p.name + "</div>"
+      + priceBadge
+      + "<div style='font-size:12px;font-weight:700;color:" + qtyColor + ";background:rgba(255,255,255,0.07);border-radius:6px;padding:3px 10px;flex-shrink:0'>" + qty + " mevcut</div>"
+      + "</div>";
+  }).join('');
+  dd.style.display = 'block';
+  _csIdx = -1;
+};
+
+window.cashierHideDD = function() {
+  var dd = document.getElementById('cashierNameDD');
+  if (dd) dd.style.display = 'none';
+  _csIdx = -1;
+};
+
+window._csHover = function(i) {
+  var dd = document.getElementById('cashierNameDD');
+  if (!dd) return;
+  dd.querySelectorAll('[data-idx]').forEach(function(el){ el.style.background = ''; });
+  var item = dd.querySelector('[data-idx="' + i + '"]');
+  if (item) { item.style.background = 'rgba(99,102,241,0.16)'; _csIdx = i; }
+};
+
+window._csSelect = function(pid) {
+  var sel = document.getElementById('quickProduct');
+  var inp = document.getElementById('cashierNameSearch');
+  if (sel) { sel.value = pid; updateQuickSale(); }
+  var p = (window.state && window.state.products ? window.state.products : []).find(function(x){ return x.id === pid; });
+  if (inp && p) inp.value = p.name;
+  window.cashierHideDD();
+  if (p) showToast('✓ ' + p.name, 'success');
+};
+
+window.cashierHandleKey = function(e) {
+  var dd = document.getElementById('cashierNameDD');
+  if (!dd || dd.style.display === 'none') return;
+  var items = dd.querySelectorAll('[data-idx]');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _csIdx = Math.min(_csIdx + 1, items.length - 1);
+    items.forEach(function(el, i){ el.style.background = i === _csIdx ? 'rgba(99,102,241,0.16)' : ''; });
+    if (items[_csIdx]) items[_csIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _csIdx = Math.max(_csIdx - 1, 0);
+    items.forEach(function(el, i){ el.style.background = i === _csIdx ? 'rgba(99,102,241,0.16)' : ''; });
+    if (items[_csIdx]) items[_csIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && _csIdx >= 0) {
+    e.preventDefault();
+    var item = items[_csIdx];
+    if (item) window._csSelect(item.getAttribute('data-pid'));
+  } else if (e.key === 'Escape') {
+    window.cashierHideDD();
+  }
+};
+
+// Satış sonrası: arama alanını sıfırla
+var _origSubmit = window.submitQuickSale;
+window.submitQuickSale = async function() {
+  await _origSubmit();
+  var inp = document.getElementById('cashierNameSearch');
+  if (inp) inp.value = '';
+  window.cashierHideDD();
 };
 </script>
 </body>

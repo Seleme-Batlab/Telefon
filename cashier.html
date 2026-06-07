@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>كاشير — BatLab </title>
+<title>كاشير —</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -23,7 +23,7 @@
            collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot }
     from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-const firebaseConfig = {
+ const firebaseConfig = {
     apiKey: "AIzaSyDiXog4yaxyMS64lQ3T2ZEitr_4e9NtSCA",
     authDomain: "mobile-manager-4a9a9.firebaseapp.com",
     projectId: "mobile-manager-4a9a9",
@@ -32,7 +32,6 @@ const firebaseConfig = {
     appId: "1:517550316753:web:15bddc3385b6a97b6bb9f0",
     measurementId: "G-393HKJNRDL"
   };
-
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   window._auth = auth;
@@ -105,7 +104,7 @@ const firebaseConfig = {
       query(collection(db,'products'), where('userId','==',uid)),
       (snap) => {
         window.state.products = snap.docs.map(d=>({id:d.id,...d.data()}))
-          .sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+          .sort((a,b)=> (b.createdAt||'') > (a.createdAt||'') ? 1 : -1);
         populateDropdown();
         // refresh available qty badge if a product is selected
         const pid = document.getElementById('quickProduct')?.value;
@@ -122,7 +121,7 @@ const firebaseConfig = {
       query(collection(db,'sales'), where('userId','==',uid)),
       (snap) => {
         window.state.sales = snap.docs.map(d=>({id:d.id,...d.data()}))
-          .sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||''));
+          .sort((a,b)=> (b.date||'') > (a.date||'') ? 1 : -1);
         renderSales();
       },
       (err) => { showToast('خطأ بالمبيعات: '+err.message,'error'); }
@@ -454,13 +453,16 @@ const firebaseConfig = {
   <div class="cashier-topbar">
     <div class="cashier-logo" style="gap:10px">
       <img src="logo website.png" alt="BatLab" style="width:36px;height:36px;border-radius:10px;object-fit:contain">
-      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px">Bat<span style="color:var(--c-primary-bright)">Lab</span> </span>
+      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px"> seleme web  </span>
     </div>
 
     <!-- التبويبين الرئيسيين -->
     <div class="topbar-tabs">
       <button class="topbar-tab active" data-page="sale" onclick="showPage('sale')">
         <i class="ti ti-shopping-cart"></i> تسجيل بيع
+      </button>
+      <button class="topbar-tab" data-page="profit" onclick="showPage('profit')">
+        <i class="ti ti-coins"></i> تسجيل ربح
       </button>
       <button class="topbar-tab" data-page="sales" onclick="showPage('sales')">
         <i class="ti ti-receipt"></i> سجل المبيعات
@@ -510,9 +512,26 @@ const firebaseConfig = {
       <!-- المنتج -->
       <div class="sale-form-card">
         <div class="sale-form-title"><i class="ti ti-box"></i> المنتج</div>
+
+        <!-- بحث بالاسم -->
+        <div style="position:relative;margin-bottom:10px">
+          <i class="ti ti-search" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--c-text3);pointer-events:none;z-index:1"></i>
+          <input type="text" id="cashierNameSearch"
+            placeholder="ابحث باسم المنتج..."
+            autocomplete="off"
+            style="width:100%;padding:13px 40px 13px 14px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;box-sizing:border-box;transition:border-color .2s;outline:none"
+            oninput="cashierFilterByName(this.value)"
+            onfocus="cashierFilterByName(this.value);this.style.borderColor='rgba(99,102,241,0.55)'"
+            onblur="setTimeout(function(){cashierHideDD()},180);this.style.borderColor='var(--c-border)'"
+            onkeydown="cashierHandleKey(event)">
+          <div id="cashierNameDD"
+            style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--radius-sm);z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)">
+          </div>
+        </div>
+
         <div style="display:flex;gap:8px">
           <div style="flex:1">
-            <select id="quickProduct" style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif" onchange="updateQuickSale()">
+            <select id="quickProduct" style="display:none" onchange="updateQuickSale()">
               <option value="">-- اختر منتجاً --</option>
             </select>
             <div id="quickAvailQty" style="display:none;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--c-text2);margin-top:6px;padding:6px 10px;background:var(--c-bg3);border-radius:var(--radius-sm);border:1px solid var(--c-border)"></div>
@@ -556,22 +575,24 @@ const firebaseConfig = {
 
       <!-- الكمية والسعر -->
       <div class="sale-form-card">
-        <div class="form-row" style="margin-bottom:14px">
-          <div>
-            <div class="sale-form-title"><i class="ti ti-123"></i> الكمية</div>
+        <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">
+          <!-- الكمية -->
+          <div style="flex:0 0 110px">
+            <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-123"></i> الكمية</div>
             <input type="number" id="quickQty" value="1" min="1"
-              style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:16px;font-family:'Cairo',sans-serif;text-align:center"
+              style="width:100%;padding:14px 10px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:26px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box"
               oninput="updateQuickSale()">
           </div>
-          <div>
-            <div class="sale-form-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">
+          <!-- سعر البيع -->
+          <div style="flex:1">
+            <div class="sale-form-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px">
               <span><i class="ti ti-tag"></i> سعر البيع</span>
               <span id="quickRefPriceBadge" style="display:none;font-size:11px;font-weight:600;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:12px;padding:2px 9px;white-space:nowrap"></span>
             </div>
-            <div class="price-row">
-              <div class="price-cur-badge">₺</div>
+            <div style="display:flex;align-items:center;gap:6px;background:rgba(99,102,241,0.08);border:2px solid rgba(99,102,241,0.45);border-radius:var(--radius-sm);padding:4px 10px">
+              <span style="font-size:22px;font-weight:800;color:var(--c-primary-bright);flex-shrink:0">₺</span>
               <input type="number" id="quickPriceTRY" placeholder="0"
-                style="flex:1;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;font-weight:700"
+                style="flex:1;border:none;outline:none;background:transparent;color:var(--c-text);font-size:34px;font-family:'Cairo',sans-serif;font-weight:800;width:100%;min-width:0;padding:8px 0"
                 oninput="syncQuickPrice('try')">
             </div>
             <input type="hidden" id="quickPriceUSD" value="">
@@ -608,6 +629,75 @@ const firebaseConfig = {
         <i class="ti ti-check"></i> تأكيد البيع
       </button>
     </div><!-- /page-sale -->
+
+    <!-- ===== PROFIT PAGE ===== -->
+    <div class="page" id="page-profit">
+
+      <div style="max-width:480px;margin:0 auto">
+
+        <!-- Header -->
+        <div style="text-align:center;margin-bottom:28px;padding-top:8px">
+          <div style="width:60px;height:60px;background:rgba(99,102,241,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:1px solid rgba(99,102,241,0.3)">
+            <i class="ti ti-coins" style="font-size:26px;color:var(--c-primary-bright)"></i>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:var(--c-text)">تسجيل ربح</div>
+          <div style="font-size:13px;color:var(--c-text3);margin-top:4px">سيظهر في الإحصائيات على صفحة الإدارة</div>
+        </div>
+
+        <!-- نوع الربح -->
+        <div class="sale-form-card" style="margin-bottom:16px">
+          <div class="sale-form-title"><i class="ti ti-category"></i> نوع الربح</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
+            <button id="profitTypeInvoice" onclick="selectProfitType('invoice')"
+              style="padding:16px 12px;border:2px solid var(--c-primary);border-radius:12px;background:rgba(99,102,241,0.12);cursor:pointer;color:var(--c-primary-bright);font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s">
+              <i class="ti ti-file-invoice" style="font-size:26px"></i>
+              ربح رصيد
+            </button>
+            <button id="profitTypeMaintenance" onclick="selectProfitType('maintenance')"
+              style="padding:16px 12px;border:1px solid var(--c-border);border-radius:12px;background:var(--c-bg3);cursor:pointer;color:var(--c-text2);font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s">
+              <i class="ti ti-tool" style="font-size:26px"></i>
+              ربح صيانة
+            </button>
+          </div>
+          <input type="hidden" id="selectedProfitType" value="invoice">
+        </div>
+
+        <!-- المبلغ -->
+        <div class="sale-form-card" style="margin-bottom:16px">
+          <div class="sale-form-title"><i class="ti ti-currency-lira"></i> المبلغ بالليرة</div>
+          <div style="position:relative;margin-top:6px">
+            <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:18px;font-weight:800;color:var(--c-text3);pointer-events:none">₺</div>
+            <input type="number" id="profitAmtTRY" placeholder="0" min="0" step="1"
+              oninput="updateProfitPreview()"
+              style="width:100%;padding:14px 36px 14px 12px;border:1px solid var(--c-border);border-radius:12px;background:var(--c-bg3);color:var(--c-text);font-size:22px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box;outline:none">
+          </div>
+          <!-- معادل USD -->
+          <div id="profitUSDPreview" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center">
+            <span style="font-size:13px;color:var(--c-text3)">يعادل: </span>
+            <span id="profitUSDVal" style="font-size:16px;font-weight:700;color:var(--c-green)">$0.00</span>
+          </div>
+        </div>
+
+        <!-- ملاحظة -->
+        <div class="sale-form-card" style="margin-bottom:20px">
+          <div class="sale-form-title"><i class="ti ti-notes"></i> ملاحظة (اختياري)</div>
+          <input type="text" id="profitNote" placeholder="مثال: فاتورة زبون، إصلاح جهاز..."
+            style="width:100%;padding:11px 14px;border:1px solid var(--c-border);border-radius:12px;background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;box-sizing:border-box;margin-top:6px;outline:none">
+        </div>
+
+        <!-- زر الحفظ -->
+        <button onclick="submitProfit()"
+          style="width:100%;padding:15px;background:linear-gradient(135deg,#4F46E5,#6366F1);border:none;border-radius:14px;cursor:pointer;color:#fff;font-size:16px;font-family:'Cairo',sans-serif;font-weight:800;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(99,102,241,0.35)">
+          <i class="ti ti-check" style="font-size:20px"></i> حفظ الربح
+        </button>
+
+        <!-- ملاحظة -->
+        <div style="margin-top:16px;padding:12px 16px;background:var(--c-bg2);border:1px solid var(--c-border);border-radius:10px;display:flex;align-items:center;gap:10px">
+          <i class="ti ti-info-circle" style="font-size:16px;color:var(--c-primary-bright);flex-shrink:0"></i>
+         </div>
+
+      </div>
+    </div><!-- /page-profit -->
 
     <!-- ===== SALES LOG PAGE ===== -->
     <div class="page" id="page-sales">
@@ -713,7 +803,69 @@ function recalcSummary(){
   } else if(warnEl){ warnEl.style.display='none'; }
 }
 
-// ======= BARCODE =======
+// ======= PROFIT PAGE =======
+window.selectProfitType = (type) => {
+  const invoiceBtn = document.getElementById('profitTypeInvoice');
+  const maintBtn   = document.getElementById('profitTypeMaintenance');
+  document.getElementById('selectedProfitType').value = type;
+  if(type === 'invoice'){
+    invoiceBtn.style.border = '2px solid var(--c-primary)';
+    invoiceBtn.style.background = 'rgba(99,102,241,0.12)';
+    invoiceBtn.style.color = 'var(--c-primary-bright)';
+    maintBtn.style.border = '1px solid var(--c-border)';
+    maintBtn.style.background = 'var(--c-bg3)';
+    maintBtn.style.color = 'var(--c-text2)';
+  } else {
+    maintBtn.style.border = '2px solid #10b981';
+    maintBtn.style.background = 'rgba(16,185,129,0.12)';
+    maintBtn.style.color = '#10b981';
+    invoiceBtn.style.border = '1px solid var(--c-border)';
+    invoiceBtn.style.background = 'var(--c-bg3)';
+    invoiceBtn.style.color = 'var(--c-text2)';
+  }
+};
+
+window.updateProfitPreview = () => {
+  const amt = parseFloat(document.getElementById('profitAmtTRY')?.value)||0;
+  const rate = window.state?.rate || 32.5;
+  const preview = document.getElementById('profitUSDPreview');
+  const usdVal  = document.getElementById('profitUSDVal');
+  if(amt > 0 && preview && usdVal){
+    preview.style.display = 'block';
+    usdVal.textContent = '$' + (amt/rate).toFixed(2);
+  } else if(preview){
+    preview.style.display = 'none';
+  }
+};
+
+window.submitProfit = async () => {
+  if(window._busy){ showToast('جاري تنفيذ عملية، انتظر لحظة...','error'); return; }
+  const type    = document.getElementById('selectedProfitType')?.value || 'invoice';
+  const amtTRY  = parseFloat(document.getElementById('profitAmtTRY')?.value) || 0;
+  const note    = (document.getElementById('profitNote')?.value || '').trim();
+  if(!amtTRY || amtTRY <= 0){ showToast('أدخل مبلغ الربح','error'); return; }
+  const rate   = window.state?.rate || 32.5;
+  const amount = amtTRY / rate;
+  const uid    = window._auth?.currentUser?.uid || '';
+  const data = {
+    type, amount, amountTRY: amtTRY, note,
+    date: new Date().toISOString().split('T')[0],
+    createdAt: new Date().toISOString(),
+    userId: uid
+  };
+  setBusy(true,'جاري حفظ الربح...');
+  try {
+    const col = window._collection(window._db,'extraProfits');
+    await window._addDoc(col, data);
+    document.getElementById('profitAmtTRY').value = '';
+    document.getElementById('profitNote').value = '';
+    document.getElementById('profitUSDPreview').style.display = 'none';
+    const typeLabel = type === 'invoice' ? 'ربح رصيد' : 'ربح صيانة';
+    showToast(`✓ تم حفظ ${typeLabel} — ₺${amtTRY.toLocaleString()}`, 'success');
+  } catch(e){ showToast('خطأ: '+e.message,'error'); }
+  finally { setBusy(false); }
+};
+
 window.toggleBarcodeInput = () => {
   const wrap = document.getElementById('barcodeInputWrap');
   const inp  = document.getElementById('barcodeInput');
@@ -729,6 +881,8 @@ window.searchByBarcode = (val) => {
   if(p){
     const sel=document.getElementById('quickProduct');
     if(sel){sel.value=p.id;updateQuickSale();}
+    const nameInp = document.getElementById('cashierNameSearch');
+    if(nameInp) nameInp.value = p.name;
     document.getElementById('barcodeInputWrap').style.display='none';
     document.getElementById('barcodeInput').value='';
     showToast('تم العثور على: '+p.name,'success');
@@ -761,6 +915,8 @@ window.startCameraScanner = async () => {
         if(p){
           const sel=document.getElementById('quickProduct');
           if(sel){sel.value=p.id;updateQuickSale();}
+          const nameInp = document.getElementById('cashierNameSearch');
+          if(nameInp) nameInp.value = p.name;
           showToast('✓ '+p.name,'success');
         } else {
           document.getElementById('barcodeInputWrap').style.display='block';
@@ -775,12 +931,101 @@ window.startCameraScanner = async () => {
   }
 };
 
-window.stopCameraScanner = () => {
-  if(_zxingReader){try{_zxingReader.reset();}catch(e){}_zxingReader=null;}
-  const wrap=document.getElementById('cameraScannerWrap');
-  if(wrap) wrap.style.display='none';
-  const video=document.getElementById('scannerVideo');
-  if(video&&video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+// ======= CASHIER NAME SEARCH =======
+var _csIdx = -1;
+
+window.cashierFilterByName = function(val) {
+  var dd = document.getElementById('cashierNameDD');
+  if (!dd || !window.state) return;
+  var q = (val || '').trim().toLowerCase();
+  var products = window.state.products || [];
+  var filtered = q.length === 0
+    ? products.slice(0, 50)
+    : products.filter(function(p){ return p.name && p.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 50);
+
+  if (!filtered.length) {
+    dd.innerHTML = "<div style='padding:16px;font-size:14px;color:var(--c-text3);font-family:Cairo,sans-serif;text-align:center'><i class=\"ti ti-mood-sad\" style=\"font-size:20px;display:block;margin-bottom:6px;opacity:.5\"></i>لا يوجد منتج بهالاسم</div>";
+    dd.style.display = 'block';
+    _csIdx = -1;
+    return;
+  }
+
+  var rate = window.state.rate || 32.5;
+  dd.innerHTML = filtered.map(function(p, i) {
+    var qty = p.qty != null ? p.qty : 0;
+    var qtyColor = qty <= 0 ? 'var(--c-red)' : qty <= 3 ? 'var(--c-amber)' : 'var(--c-green)';
+    var sellUSD = p.currency === 'usd' ? p.sellPrice : (p.sellPrice || 0) / rate;
+    var priceBadge = sellUSD > 0
+      ? "<span style='font-size:12px;font-weight:700;color:var(--c-primary-bright);background:rgba(99,102,241,0.12);border-radius:6px;padding:2px 8px;flex-shrink:0'>₺" + Math.round(sellUSD * rate) + "</span>"
+      : '';
+    return "<div data-idx='" + i + "' data-pid='" + p.id + "'"
+      + " onmousedown='window._csSelect(\"" + p.id + "\")'"
+      + " onmouseover='window._csHover(" + i + ")'"
+      + " style='display:flex;justify-content:space-between;align-items:center;padding:13px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);font-family:Cairo,sans-serif;gap:8px' id='cs-item-" + i + "'>"
+      + "<div style='font-size:14px;font-weight:600;color:var(--c-text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" + p.name + "</div>"
+      + priceBadge
+      + "<div style='font-size:12px;font-weight:700;color:" + qtyColor + ";background:rgba(255,255,255,0.07);border-radius:6px;padding:3px 10px;flex-shrink:0'>" + qty + " متاح</div>"
+      + "</div>";
+  }).join('');
+  dd.style.display = 'block';
+  _csIdx = -1;
+};
+
+window.cashierHideDD = function() {
+  var dd = document.getElementById('cashierNameDD');
+  if (dd) dd.style.display = 'none';
+  _csIdx = -1;
+};
+
+window._csHover = function(i) {
+  var dd = document.getElementById('cashierNameDD');
+  if (!dd) return;
+  dd.querySelectorAll('[data-idx]').forEach(function(el){ el.style.background = ''; });
+  var item = dd.querySelector('[data-idx="' + i + '"]');
+  if (item) { item.style.background = 'rgba(99,102,241,0.16)'; _csIdx = i; }
+};
+
+window._csSelect = function(pid) {
+  var sel = document.getElementById('quickProduct');
+  var inp = document.getElementById('cashierNameSearch');
+  if (sel) { sel.value = pid; updateQuickSale(); }
+  var p = (window.state && window.state.products ? window.state.products : []).find(function(x){ return x.id === pid; });
+  if (inp && p) inp.value = p.name;
+  window.cashierHideDD();
+  if (p) showToast('✓ ' + p.name, 'success');
+};
+
+window.cashierHandleKey = function(e) {
+  var dd = document.getElementById('cashierNameDD');
+  if (!dd || dd.style.display === 'none') return;
+  var items = dd.querySelectorAll('[data-idx]');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _csIdx = Math.min(_csIdx + 1, items.length - 1);
+    items.forEach(function(el, i){ el.style.background = i === _csIdx ? 'rgba(99,102,241,0.16)' : ''; });
+    if (items[_csIdx]) items[_csIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _csIdx = Math.max(_csIdx - 1, 0);
+    items.forEach(function(el, i){ el.style.background = i === _csIdx ? 'rgba(99,102,241,0.16)' : ''; });
+    if (items[_csIdx]) items[_csIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && _csIdx >= 0) {
+    e.preventDefault();
+    var item = items[_csIdx];
+    if (item) window._csSelect(item.getAttribute('data-pid'));
+  } else if (e.key === 'Escape') {
+    window.cashierHideDD();
+  }
+};
+
+// بعد البيع: صفّر حقل البحث
+var _origSubmit = window.submitQuickSale;
+window.submitQuickSale = async function() {
+  await _origSubmit();
+  var inp = document.getElementById('cashierNameSearch');
+  if (inp) inp.value = '';
+  window.cashierHideDD();
 };
 </script>
 </body>

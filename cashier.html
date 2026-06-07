@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>كاشير — BatLab </title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="cashier.css">
+
+<style>
+@keyframes livePulse {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%     { opacity:.4; transform:scale(1.4); }
+}
+</style>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, initializeFirestore, persistentLocalCache,
+           collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot }
+    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDiXog4yaxyMS64lQ3T2ZEitr_4e9NtSCA",
+    authDomain: "mobile-manager-4a9a9.firebaseapp.com",
+    projectId: "mobile-manager-4a9a9",
+    storageBucket: "mobile-manager-4a9a9.firebasestorage.app",
+    messagingSenderId: "517550316753",
+    appId: "1:517550316753:web:15bddc3385b6a97b6bb9f0",
+    measurementId: "G-393HKJNRDL"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  window._auth = auth;
+  const db = initializeFirestore(app, { localCache: persistentLocalCache() });
+  window._db = db;
+  window._collection = collection;
+  window._addDoc = addDoc;
+  window._updateDoc = updateDoc;
+  window._doc = doc;
+
+  // ======= STATE =======
+  window.state = {
+    rate: 32.5,
+    products: [],
+    sales: [],
+    saleFilter: 'all',
+    activePage: 'sale'
+  };
+
+  // ======= AUTH =======
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'flex';
+      document.getElementById('userEmail').textContent = user.email;
+      loadAllData();
+      fetchRate();
+    } else {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('appScreen').style.display = 'none';
+    }
+  });
+
+  window.doLogin = async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass  = document.getElementById('loginPass').value;
+    const btn   = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'جاري الدخول...';
+    try { await signInWithEmailAndPassword(auth, email, pass); }
+    catch(e) { showToast('خطأ: ' + e.message, 'error'); btn.disabled=false; btn.textContent='دخول'; }
+  };
+
+  window.doLogout = () => {
+    if(_unsubProducts){ _unsubProducts(); _unsubProducts=null; }
+    if(_unsubSales)   { _unsubSales();    _unsubSales=null;    }
+    setLiveIndicator(false);
+    signOut(auth);
+  };
+
+  // ======= REAL-TIME LISTENERS =======
+  let _unsubProducts = null;
+  let _unsubSales    = null;
+
+  function setLiveIndicator(on) {
+    const el = document.getElementById('liveIndicator');
+    if(!el) return;
+    el.innerHTML = on
+      ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:3px 10px"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;animation:livePulse 1.4s ease-in-out infinite"></span>مباشر</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:20px;padding:3px 10px"><span style="width:7px;height:7px;border-radius:50%;background:var(--c-text3);display:inline-block"></span>غير متصل</span>`;
+  }
+
+  function subscribeRealtime() {
+    const uid = auth.currentUser.uid;
+    showLoading(true);
+    setLiveIndicator(false);
+
+    // --- products listener ---
+    if(_unsubProducts) _unsubProducts();
+    _unsubProducts = onSnapshot(
+      query(collection(db,'products'), where('userId','==',uid)),
+      (snap) => {
+        window.state.products = snap.docs.map(d=>({id:d.id,...d.data()}))
+          .sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+        populateDropdown();
+        // refresh available qty badge if a product is selected
+        const pid = document.getElementById('quickProduct')?.value;
+        if(pid) updateQuickSale();
+        showLoading(false);
+        setLiveIndicator(true);
+      },
+      (err) => { showToast('خطأ بالمنتجات: '+err.message,'error'); showLoading(false); setLiveIndicator(false); }
+    );
+
+    // --- sales listener ---
+    if(_unsubSales) _unsubSales();
+    _unsubSales = onSnapshot(
+      query(collection(db,'sales'), where('userId','==',uid)),
+      (snap) => {
+        window.state.sales = snap.docs.map(d=>({id:d.id,...d.data()}))
+          .sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||''));
+        renderSales();
+      },
+      (err) => { showToast('خطأ بالمبيعات: '+err.message,'error'); }
+    );
+  }
+
+  // keep backward compat if anything calls loadAllData
+  async function loadAllData() { subscribeRealtime(); }
+
+  function populateDropdown() {
+    const sel = document.getElementById('quickProduct');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">-- اختر منتجاً --</option>' +
+      window.state.products.map(p =>
+        `<option value="${p.id}">${p.name} (${p.qty})</option>`
+      ).join('');
+  }
+  window.populateDropdown = populateDropdown;
+
+  // ======= RATE =======
+  window.fetchRate = async () => {
+    try {
+      const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      const d = await r.json();
+      if(d.rates?.TRY) {
+        window.state.rate = d.rates.TRY;
+        const inp = document.getElementById('rateInput');
+        if(inp) inp.value = window.state.rate.toFixed(2);
+      }
+    } catch(e) {}
+  };
+
+  window.setManualRate = (v) => {
+    const num = parseFloat(v);
+    if(num > 1) window.state.rate = num;
+  };
+
+  // ======= SUBMIT SALE =======
+  window.submitQuickSale = async () => {
+    if(window._busy){showToast('جاري تنفيذ عملية، انتظر لحظة...','error');return;}
+    const st = window.state;
+    const pid = document.getElementById('quickProduct')?.value;
+    const p   = st.products.find(x=>x.id===pid);
+    if(!p){showToast('اختر منتجاً','error');return;}
+    const qty = parseInt(document.getElementById('quickQty')?.value)||1;
+    if(qty > p.qty){showToast('الكمية المتاحة: '+p.qty,'error');return;}
+    const priceUSD = parseFloat(document.getElementById('quickPriceUSD')?.value)||0;
+    if(!priceUSD){showToast('أدخل سعر البيع','error');return;}
+    const buyUSD = p.currency==='usd' ? p.buyPrice : p.buyPrice/st.rate;
+    if(priceUSD <= buyUSD){
+      const diff = ((buyUSD-priceUSD)*st.rate).toFixed(0);
+      showToast(`⚠️ سعر البيع أقل من التكلفة بـ ₺${diff}!`,'error');
+      return;
+    }
+    const customer = document.getElementById('quickCustomer')?.value||'';
+    const saleData = {
+      productId: pid, productName: p.name, qty, price: priceUSD,
+      currency: 'usd', type: 'cash', customer,
+      date: new Date().toISOString().split('T')[0],
+      cost: buyUSD, createdAt: new Date().toISOString(),
+      userId: auth.currentUser.uid
+    };
+    setBusy(true,'جاري تسجيل البيع...');
+    try {
+      const salesCol = collection(db,'sales');
+      await addDoc(salesCol, saleData);
+      // لا نضيف يدوياً — الـ onSnapshot سيتكفل بالتحديث تلقائياً
+      await updateDoc(doc(db,'products',pid),{qty:p.qty-qty});
+      const idx = st.products.findIndex(x=>x.id===pid);
+      st.products[idx].qty -= qty;
+      // reset form
+      document.getElementById('quickProduct').value = '';
+      document.getElementById('quickQty').value = '1';
+      document.getElementById('quickPriceTRY').value = '';
+      document.getElementById('quickPriceUSD').value = '';
+      document.getElementById('quickCostUSD').value = '';
+      document.getElementById('quickCostTRY').value = '';
+      document.getElementById('quickCustomer').value = '';
+      document.getElementById('quickNotes').value = '';
+      const qtyBadge = document.getElementById('quickAvailQty');
+      if(qtyBadge) qtyBadge.style.display = 'none';
+      const refBadge = document.getElementById('quickRefPriceBadge');
+      if(refBadge) refBadge.style.display = 'none';
+      const warnEl = document.getElementById('quickPriceWarning');
+      if(warnEl) warnEl.style.display = 'none';
+      setText('qTotal','$0.00'); setText('qTotalTRY','₺0'); setText('qProfit','$0.00');
+      populateDropdown();
+      renderSales();
+      showToast('تم تسجيل البيع ✓','success');
+    } catch(e){showToast('خطأ: '+e.message,'error');}
+    finally { setBusy(false); }
+  };
+
+  // ======= DELETE / EDIT SALE =======
+  window.deleteSale = async (saleId) => {
+    if(window._busy){showToast('جاري تنفيذ عملية...','error');return;}
+    if(!confirm('حذف هذه العملية نهائياً؟')) return;
+    const sale = window.state.sales.find(s=>s.id===saleId);
+    if(!sale) return;
+    setBusy(true,'جاري الحذف...');
+    try {
+      await deleteDoc(doc(db,'sales',saleId));
+      if(sale.type==='cash'||sale.type==='sell'){
+        const pIdx = window.state.products.findIndex(p=>p.id===sale.productId);
+        if(pIdx>-1){
+          const newQty = window.state.products[pIdx].qty + sale.qty;
+          await updateDoc(doc(db,'products',sale.productId),{qty:newQty});
+          window.state.products[pIdx].qty = newQty;
+        }
+      }
+      // لا نحذف يدوياً — الـ onSnapshot سيتكفل بالتحديث تلقائياً
+      populateDropdown();
+      showToast('تم حذف العملية ✓','success');
+    } catch(e){showToast('خطأ: '+e.message,'error');}
+    finally { setBusy(false); }
+  };
+
+  window.openEditSaleModal = (saleId) => {
+    const s = window.state.sales.find(x=>x.id===saleId);
+    if(!s) return;
+    setModal(`
+      <div class="modal-hdr">
+        <div class="modal-title">تعديل العملية</div>
+        <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="fg"><label>اسم المنتج</label><input id="esProdName" value="${s.productName||''}" placeholder="اسم المنتج"></div>
+      <div class="form-row">
+        <div class="fg"><label>الكمية</label><input type="number" id="esQty" value="${s.qty||1}" min="1"></div>
+        <div class="fg"><label>سعر البيع (USD)</label>
+          <div style="display:flex;gap:8px">
+            <div class="price-cur-badge">USD $</div>
+            <input type="number" id="esPrice" value="${s.price||0}" step="0.01"
+              style="flex:1;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;font-weight:600">
+          </div>
+        </div>
+      </div>
+      <div class="fg"><label>التاريخ</label><input type="date" id="esDate" value="${s.date||''}"></div>
+      <div class="fg"><label>اسم الزبون (اختياري)</label><input id="esCustomer" value="${s.customer||''}" placeholder="اسم الزبون"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:10px" onclick="saveSaleEdit('${saleId}')">
+        <i class="ti ti-check"></i> حفظ التعديلات
+      </button>`);
+  };
+
+  window.saveSaleEdit = async (saleId) => {
+    if(window._busy){showToast('جاري تنفيذ عملية...','error');return;}
+    const productName = (document.getElementById('esProdName')?.value||'').trim();
+    const qty         = parseInt(document.getElementById('esQty')?.value)||1;
+    const price       = parseFloat(document.getElementById('esPrice')?.value)||0;
+    const date        = document.getElementById('esDate')?.value||'';
+    const customer    = (document.getElementById('esCustomer')?.value||'').trim();
+    if(!productName||!price){showToast('يرجى ملء الحقول المطلوبة','error');return;}
+    setBusy(true,'جاري الحفظ...');
+    try {
+      await updateDoc(doc(db,'sales',saleId),{productName,qty,price,date,customer});
+      // لا نحدث يدوياً — الـ onSnapshot سيتكفل بالتحديث تلقائياً
+      closeModal();
+      showToast('تم التعديل ✓','success');
+    } catch(e){showToast('خطأ: '+e.message,'error');}
+    finally { setBusy(false); }
+  };
+
+  // ======= RENDER SALES =======
+  window.renderSales = () => {
+    const st = window.state;
+    const filter = st.saleFilter;
+    const list   = st.sales.filter(s=>filter==='all'||s.type===filter);
+    const el     = document.getElementById('salesList');
+    if(!el) return;
+    const typeLabelMap = {cash:'نقدي',debt:'دين',partial:'دفعة',return:'إعادة',waste:'هدر'};
+    const typeBadgeMap = {cash:'badge-g',debt:'badge-a',partial:'badge-b',return:'badge-p',waste:'badge-r'};
+    const typeIconMap  = {cash:'ti-cash',debt:'ti-clock-dollar',partial:'ti-coin',return:'ti-arrow-back-up',waste:'ti-trash'};
+    el.innerHTML = list.length ? list.map(s=>{
+      const total   = s.price*s.qty;
+      const buyUSD  = s.cost||0;
+      const profit  = (s.price-buyUSD)*s.qty;
+      const badgeCls= typeBadgeMap[s.type]||'badge-b';
+      const label   = typeLabelMap[s.type]||s.type;
+      const icon    = typeIconMap[s.type]||'ti-receipt';
+      return `
+      <div class="card" style="margin-bottom:14px;padding:20px;border-right:4px solid ${s.type==='cash'?'var(--c-green)':s.type==='debt'?'var(--c-amber)':s.type==='partial'?'var(--c-primary)':s.type==='return'?'#A78BFA':'var(--c-red)'}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:42px;height:42px;border-radius:10px;background:var(--c-bg3);border:1px solid var(--c-border);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--c-text2)">
+              <i class="ti ${icon}"></i>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:3px">${s.productName}</div>
+              <span class="badge ${badgeCls}">${label}</span>
+            </div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:700">$${total.toFixed(2)}</div>
+            <div style="font-size:12px;color:var(--c-text3)">₺${(total*st.rate).toFixed(0)}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+          <div style="background:var(--c-bg3);border-radius:var(--radius-sm);padding:8px;text-align:center;border:1px solid var(--c-border)">
+            <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">الكمية</div>
+            <div style="font-size:15px;font-weight:700">${s.qty}</div>
+          </div>
+          <div style="background:var(--c-bg3);border-radius:var(--radius-sm);padding:8px;text-align:center;border:1px solid var(--c-border)">
+            <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">التاريخ</div>
+            <div style="font-size:13px;font-weight:600">${s.date||'—'}</div>
+          </div>
+          
+        </div>
+        ${s.customer?`<div style="margin-top:10px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--c-text2);background:rgba(59,130,246,0.08);padding:6px 10px;border-radius:var(--radius-sm);border:1px solid rgba(59,130,246,0.15)"><i class="ti ti-user" style="font-size:14px;color:var(--c-primary-bright)"></i> ${s.customer}</div>`:''}
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn-sm" style="flex:1;justify-content:center;padding:8px" onclick="openEditSaleModal('${s.id}')">
+            <i class="ti ti-edit"></i> تعديل
+          </button>
+          <button class="btn-sm btn-red" style="flex:1;justify-content:center;padding:8px" onclick="deleteSale('${s.id}')">
+            <i class="ti ti-trash"></i> حذف
+          </button>
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty"><i class="ti ti-receipt"></i><p>لا توجد مبيعات</p></div>`;
+  };
+
+  // ======= FILTER =======
+  window.filterSales = (type, tab) => {
+    window.state.saleFilter = type;
+    document.querySelectorAll('#page-sales .tab').forEach(t=>t.classList.remove('active'));
+    tab?.classList.add('active');
+    renderSales();
+  };
+
+  // ======= MODAL =======
+  window.setModal = (html) => {
+    document.getElementById('modalContent').innerHTML = html;
+    document.getElementById('modal').classList.add('open');
+  };
+  window.closeModal = () => {
+    document.getElementById('modal').classList.remove('open');
+    document.getElementById('modalContent').innerHTML = '';
+  };
+
+  // ======= BUSY =======
+  window.setBusy = (on, msg='') => {
+    window._busy = on;
+    const el = document.getElementById('busyOverlay');
+    if(on){ document.getElementById('busyMsg').textContent=msg; el.classList.add('visible'); }
+    else  { el.classList.remove('visible'); }
+  };
+
+  // ======= LOADING BAR =======
+  window.showLoading = (on) => {
+    document.getElementById('loadingBar').classList.toggle('active', on);
+  };
+
+  // ======= TOAST =======
+  window.showToast = (msg, type='success') => {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.innerHTML = `<i class="ti ${type==='success'?'ti-circle-check':'ti-alert-circle'}"></i> ${msg}`;
+    c.appendChild(t);
+    setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);}, 3000);
+  };
+
+  // ======= THEME =======
+  window.toggleTheme = () => {
+    const is = document.documentElement.dataset.theme === 'light';
+    document.documentElement.dataset.theme = is ? '' : 'light';
+    localStorage.setItem('cashier_theme', is ? '' : 'light');
+    const ic = document.getElementById('themeIcon');
+    if(ic) ic.className = `ti ${is ? 'ti-moon' : 'ti-sun'}`;
+  };
+  const savedTheme = localStorage.getItem('cashier_theme');
+  if(savedTheme === 'light'){
+    document.documentElement.dataset.theme = 'light';
+    setTimeout(()=>{const ic=document.getElementById('themeIcon');if(ic)ic.className='ti ti-moon';},100);
+  }
+
+  // ======= PAGE SWITCH =======
+  window.showPage = (id) => {
+    window.state.activePage = id;
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+id)?.classList.add('active');
+    document.querySelectorAll('.topbar-tab').forEach(b=>{
+      b.classList.toggle('active', b.dataset.page===id);
+    });
+  };
+
+  setTimeout(()=>{ const inp=document.getElementById('rateInput'); if(inp) inp.value=window.state.rate.toFixed(2); },300);
+</script>
+</head>
+<body>
+
+<!-- BUSY OVERLAY -->
+<div id="busyOverlay">
+  <div class="busy-card">
+    <div class="busy-spinner"></div>
+    <div class="busy-msg" id="busyMsg">جاري تسجيل العملية...</div>
+  </div>
+</div>
+
+<!-- LOADING BAR -->
+<div class="loading-bar" id="loadingBar"></div>
+
+<!-- TOAST -->
+<div id="toastContainer"></div>
+
+<!-- MODAL -->
+<div id="modal" onclick="if(event.target===this)closeModal()">
+  <div id="modalContent"></div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="26" height="26" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="1" width="16" height="26" rx="3" stroke="currentColor" stroke-width="1.8"/><rect x="9" y="3.5" width="10" height="1.5" rx="0.75" fill="currentColor" opacity="0.4"/><circle cx="14" cy="23.5" r="1.2" fill="currentColor" opacity="0.6"/><rect x="9" y="7" width="10" height="13" rx="1.5" fill="currentColor" opacity="0.08"/><line x1="9" y1="10" x2="19" y2="10" stroke="currentColor" stroke-width="1" opacity="0.3"/><line x1="9" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1" opacity="0.3"/></svg>
+      Bat<span>Lab</span> ai
+    </div>
+    <div class="login-sub">كاشير — نظام البيع</div>
+    <div class="fg"><label>البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@email.com"></div>
+    <div class="fg"><label>كلمة المرور</label><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()" style="width:100%;justify-content:center;">
+      <i class="ti ti-login"></i> دخول
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+
+  <!-- TOPBAR -->
+  <div class="cashier-topbar">
+    <div class="cashier-logo" style="gap:10px">
+      <img src="logo website.png" alt="BatLab" style="width:36px;height:36px;border-radius:10px;object-fit:contain">
+      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px">Bat<span style="color:var(--c-primary-bright)">Lab</span> </span>
+    </div>
+
+    <!-- التبويبين الرئيسيين -->
+    <div class="topbar-tabs">
+      <button class="topbar-tab active" data-page="sale" onclick="showPage('sale')">
+        <i class="ti ti-shopping-cart"></i> تسجيل بيع
+      </button>
+      <button class="topbar-tab" data-page="sales" onclick="showPage('sales')">
+        <i class="ti ti-receipt"></i> سجل المبيعات
+      </button>
+    </div>
+
+    <!-- مؤشر مباشر -->
+    <div id="liveIndicator" style="display:flex;align-items:center"></div>
+
+    <!-- أكشنز -->
+    <div class="topbar-actions">
+      <button onclick="toggleTheme()" title="تبديل الثيم"
+        style="padding:6px 8px;background:transparent;border:1px solid var(--c-border);border-radius:8px;cursor:pointer;color:var(--c-text2);font-size:15px;display:flex;align-items:center">
+        <i class="ti ti-sun" id="themeIcon"></i>
+      </button>
+      <div class="user-row">
+        <div class="user-email" id="userEmail"></div>
+        <button class="btn-sm" onclick="doLogout()" title="خروج" style="padding:6px 8px">
+          <i class="ti ti-logout"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="cashier-main">
+
+    <!-- ===== SALE PAGE ===== -->
+    <div class="page active" id="page-sale">
+
+      <!-- سعر الدولار -->
+      <div class="card" style="margin-bottom:16px;padding:14px 18px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="font-size:11px;color:var(--c-text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">سعر الدولار ₺/$</div>
+          <div style="display:flex;align-items:center;gap:6px;flex:1;max-width:220px">
+            <input type="number" id="rateInput" step="0.1" min="1"
+              style="flex:1;padding:7px 10px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;font-weight:700"
+              onchange="setManualRate(this.value)" oninput="setManualRate(this.value)">
+            <button onclick="fetchRate()"
+              style="padding:7px 10px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);border-radius:var(--radius-sm);cursor:pointer;color:var(--c-primary-bright);font-size:14px;display:flex;align-items:center">
+              <i class="ti ti-refresh"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- المنتج -->
+      <div class="sale-form-card">
+        <div class="sale-form-title"><i class="ti ti-box"></i> المنتج</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1">
+            <select id="quickProduct" style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif" onchange="updateQuickSale()">
+              <option value="">-- اختر منتجاً --</option>
+            </select>
+            <div id="quickAvailQty" style="display:none;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--c-text2);margin-top:6px;padding:6px 10px;background:var(--c-bg3);border-radius:var(--radius-sm);border:1px solid var(--c-border)"></div>
+          </div>
+          <button onclick="toggleBarcodeInput()" title="باركود يدوي"
+            style="background:var(--c-bg2);border:0.5px solid var(--c-border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;color:var(--c-text2);display:flex;align-items:center;gap:5px;cursor:pointer">
+            <i class="ti ti-keyboard"></i>
+          </button>
+          <button onclick="startCameraScanner()" title="مسح بالكاميرا"
+            style="background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(99,102,241,0.2));border:1px solid rgba(59,130,246,0.4);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--c-primary-bright);display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:700">
+            <i class="ti ti-camera" style="font-size:16px"></i> كاميرا
+          </button>
+        </div>
+
+        <!-- يدوي -->
+        <div id="barcodeInputWrap" style="display:none;margin-top:8px">
+          <input type="text" id="barcodeInput" placeholder="اكتب الباركود..."
+            style="width:100%;padding:10px 12px;border:1px solid var(--c-primary);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:14px;font-family:'JetBrains Mono',monospace"
+            oninput="searchByBarcode(this.value)" onkeydown="if(event.key==='Escape')toggleBarcodeInput()">
+          <div style="font-size:11px;color:var(--c-text3);margin-top:4px">اضغط ESC للإلغاء</div>
+        </div>
+
+        <!-- كاميرا -->
+        <div id="cameraScannerWrap" style="display:none;margin-top:10px">
+          <div style="position:relative;border-radius:var(--radius);overflow:hidden;background:#000;aspect-ratio:4/3;max-height:280px">
+            <video id="scannerVideo" style="width:100%;height:100%;object-fit:cover" playsinline></video>
+            <div style="position:absolute;inset:0;pointer-events:none">
+              <div style="position:absolute;left:10%;right:10%;top:50%;transform:translateY(-50%);height:2px;background:rgba(59,130,246,0.8);box-shadow:0 0 8px rgba(59,130,246,0.8);animation:scanLine 1.5s ease-in-out infinite"></div>
+              <div style="position:absolute;left:10%;right:10%;top:25%;bottom:25%;border:2px solid rgba(59,130,246,0.5);border-radius:8px"></div>
+            </div>
+            <button onclick="stopCameraScanner()"
+              style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:34px;height:34px;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+          <div id="scannerStatus" style="font-size:12px;color:var(--c-text3);text-align:center;margin-top:6px">
+            <i class="ti ti-scan"></i> وجّه الكاميرا نحو الباركود
+          </div>
+        </div>
+      </div>
+
+      <!-- الكمية والسعر -->
+      <div class="sale-form-card">
+        <div class="form-row" style="margin-bottom:14px">
+          <div>
+            <div class="sale-form-title"><i class="ti ti-123"></i> الكمية</div>
+            <input type="number" id="quickQty" value="1" min="1"
+              style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:16px;font-family:'Cairo',sans-serif;text-align:center"
+              oninput="updateQuickSale()">
+          </div>
+          <div>
+            <div class="sale-form-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">
+              <span><i class="ti ti-tag"></i> سعر البيع</span>
+              <span id="quickRefPriceBadge" style="display:none;font-size:11px;font-weight:600;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:12px;padding:2px 9px;white-space:nowrap"></span>
+            </div>
+            <div class="price-row">
+              <div class="price-cur-badge">₺</div>
+              <input type="number" id="quickPriceTRY" placeholder="0"
+                style="flex:1;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;font-weight:700"
+                oninput="syncQuickPrice('try')">
+            </div>
+            <input type="hidden" id="quickPriceUSD" value="">
+            <div id="quickPriceWarning" style="display:none;margin-top:6px;padding:8px 10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-sm);font-size:12px;color:var(--c-red);font-weight:600"></div>
+          </div>
+        </div>
+
+        <!-- hidden cost fields (used internally) -->
+        <input type="hidden" id="quickCostUSD">
+        <input type="hidden" id="quickCostTRY">
+
+        <!-- الزبون -->
+        <div style="margin-bottom:14px">
+          <div class="sale-form-title"><i class="ti ti-user"></i> اسم الزبون (اختياري)</div>
+          <input type="text" id="quickCustomer" placeholder="اسم الزبون"
+            style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
+        </div>
+
+        <!-- ملاحظات -->
+        <div style="margin-bottom:14px">
+          <div class="sale-form-title"><i class="ti ti-notes"></i> ملاحظات</div>
+          <textarea id="quickNotes" placeholder="ملاحظات..."
+            style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;height:60px;resize:vertical"></textarea>
+        </div>
+
+        <!-- ملخص -->
+        <!-- hidden vals kept for internal calc -->
+        <span id="qTotal" style="display:none">$0.00</span>
+        <span id="qTotalTRY" style="display:none">₺0</span>
+        <span id="qProfit" style="display:none">$0.00</span>
+      </div>
+
+      <button class="btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:15px" onclick="submitQuickSale()">
+        <i class="ti ti-check"></i> تأكيد البيع
+      </button>
+    </div><!-- /page-sale -->
+
+    <!-- ===== SALES LOG PAGE ===== -->
+    <div class="page" id="page-sales">
+      <div class="page-title">سجل المبيعات</div>
+      <div class="tabs">
+        <div class="tab active" onclick="filterSales('all',this)">الكل</div>
+        <div class="tab" onclick="filterSales('cash',this)">نقدي</div>
+        <div class="tab" onclick="filterSales('debt',this)">دين</div>
+        <div class="tab" onclick="filterSales('return',this)">إعادة</div>
+        <div class="tab" onclick="filterSales('partial',this)">دفعات</div>
+      </div>
+      <div id="salesList"></div>
+    </div><!-- /page-sales -->
+
+  </div><!-- /cashier-main -->
+
+  <!-- Footer -->
+  <div style="position:fixed;bottom:0;left:0;right:0;z-index:50;pointer-events:none">
+    <div style="display:flex;justify-content:flex-end;padding:6px 18px;pointer-events:auto">
+      <div style="display:flex;align-items:center;gap:7px;background:var(--c-bg2);border:1px solid var(--c-border);border-radius:20px;padding:5px 13px;box-shadow:0 2px 8px rgba(0,0,0,.18);opacity:.8">
+        <i class="ti ti-code" style="font-size:13px;color:var(--c-primary-bright)"></i>
+        <span style="font-size:11px;color:var(--c-text2);font-family:'Cairo',sans-serif;font-weight:600">مصطفى سلامة</span>
+        <span style="width:1px;height:12px;background:var(--c-border);display:inline-block"></span>
+        <a href="https://wa.me/905523223191" target="_blank" rel="noopener" style="font-size:11px;color:var(--c-primary-bright);text-decoration:none;font-family:'Cairo',sans-serif;font-weight:600;display:flex;align-items:center;gap:4px">
+          <i class="ti ti-brand-whatsapp" style="font-size:13px;color:#25D366"></i>+905523223191
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /appScreen -->
+
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script>
+function setText(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;}
+
+// ======= QUICK SALE LOGIC =======
+window.updateQuickSale = () => {
+  const st  = window.state;
+  const pid = document.getElementById('quickProduct')?.value;
+  const p   = st?.products.find(x=>x.id===pid);
+  const qtyBadge = document.getElementById('quickAvailQty');
+  if(!p){
+    setText('qTotal','$0.00'); setText('qTotalTRY','₺0'); setText('qProfit','$0.00');
+    if(qtyBadge) qtyBadge.style.display='none';
+    const refBadge = document.getElementById('quickRefPriceBadge');
+    if(refBadge) refBadge.style.display='none';
+    return;
+  }
+  if(qtyBadge){
+    const low   = p.qty < 5;
+    const color = p.qty===0?'var(--c-red)':low?'var(--c-amber)':'var(--c-green)';
+    qtyBadge.style.display = 'flex';
+    qtyBadge.innerHTML = `<i class="ti ti-package" style="font-size:13px;margin-left:4px"></i> الكمية المتاحة: <b style="color:${color};margin-right:4px">${p.qty}</b>${p.qty===0?'<span style="color:var(--c-red)"> — نفد المخزون</span>':low?'<span style="color:var(--c-amber)"> — مخزون منخفض</span>':''}`;
+  }
+  const buyUSD  = p.currency==='usd' ? p.buyPrice : p.buyPrice/st.rate;
+  const sellUSD = p.currency==='usd' ? p.sellPrice : p.sellPrice/st.rate;
+  // store cost in hidden fields (used by submitQuickSale)
+  document.getElementById('quickCostUSD').value = buyUSD.toFixed(2);
+  document.getElementById('quickCostTRY').value = (buyUSD*st.rate).toFixed(0);
+  // show reference price badge
+  const refBadge = document.getElementById('quickRefPriceBadge');
+  if(refBadge){
+    refBadge.style.display = 'inline-flex';
+    refBadge.textContent = `سعر المنتج: ₺${(sellUSD*st.rate).toFixed(0)}`;
+  }
+  document.getElementById('quickPriceTRY').value = (sellUSD*st.rate).toFixed(0);
+  const u = document.getElementById('quickPriceUSD');
+  if(u) u.value = sellUSD.toFixed(4);
+  recalcSummary();
+};
+
+window.syncQuickPrice = () => {
+  const st = window.state;
+  if(!st) return;
+  const v = parseFloat(document.getElementById('quickPriceTRY')?.value)||0;
+  const u = document.getElementById('quickPriceUSD');
+  if(u) u.value = v ? (v/st.rate).toFixed(4) : '';
+  recalcSummary();
+};
+
+function recalcSummary(){
+  const st = window.state;
+  if(!st) return;
+  const pid    = document.getElementById('quickProduct')?.value;
+  const p      = st.products.find(x=>x.id===pid);
+  const qty    = parseInt(document.getElementById('quickQty')?.value)||1;
+  const priceUSD = parseFloat(document.getElementById('quickPriceUSD')?.value)||0;
+  const buyUSD = p ? (p.currency==='usd'?p.buyPrice:p.buyPrice/st.rate) : 0;
+  const total  = priceUSD*qty;
+  const profit = (priceUSD-buyUSD)*qty;
+  setText('qTotal','$'+total.toFixed(2));
+  setText('qTotalTRY','₺'+(total*st.rate).toFixed(0));
+  const profEl = document.getElementById('qProfit');
+  if(profEl){ profEl.textContent=(profit>=0?'+':'')+'$'+profit.toFixed(2); profEl.style.color=profit>=0?'var(--c-green)':'var(--c-red)'; }
+  const warnEl = document.getElementById('quickPriceWarning');
+  if(warnEl && p && priceUSD>0){
+    if(priceUSD<=buyUSD){
+      const diff=((buyUSD-priceUSD)*st.rate).toFixed(0);
+      warnEl.style.display='block';
+      warnEl.innerHTML=`<i class="ti ti-alert-triangle"></i> أخي هالسعر ما بينفع! عم تبيع بخسارة ₺${diff}`;
+    } else { warnEl.style.display='none'; }
+  } else if(warnEl){ warnEl.style.display='none'; }
+}
+
+// ======= BARCODE =======
+window.toggleBarcodeInput = () => {
+  const wrap = document.getElementById('barcodeInputWrap');
+  const inp  = document.getElementById('barcodeInput');
+  if(!wrap) return;
+  const vis = wrap.style.display !== 'none';
+  wrap.style.display = vis ? 'none' : 'block';
+  if(!vis && inp){ inp.value=''; inp.focus(); }
+};
+
+window.searchByBarcode = (val) => {
+  if(!window.state||!val.trim()) return;
+  const p = window.state.products.find(x=>x.barcode&&x.barcode.toLowerCase()===val.trim().toLowerCase());
+  if(p){
+    const sel=document.getElementById('quickProduct');
+    if(sel){sel.value=p.id;updateQuickSale();}
+    document.getElementById('barcodeInputWrap').style.display='none';
+    document.getElementById('barcodeInput').value='';
+    showToast('تم العثور على: '+p.name,'success');
+  }
+};
+
+// ======= CAMERA SCANNER =======
+let _zxingReader = null;
+
+window.startCameraScanner = async () => {
+  const wrap   = document.getElementById('cameraScannerWrap');
+  const status = document.getElementById('scannerStatus');
+  const video  = document.getElementById('scannerVideo');
+  if(!wrap) return;
+  wrap.style.display='block';
+  document.getElementById('barcodeInputWrap').style.display='none';
+  if(typeof ZXing==='undefined'){
+    if(status) status.innerHTML='<span style="color:var(--c-red)">⚠ مكتبة القراءة لم تُحمَّل</span>';
+    return;
+  }
+  try {
+    _zxingReader = new ZXing.BrowserMultiFormatReader();
+    if(status) status.innerHTML='<i class="ti ti-scan"></i> وجّه الكاميرا نحو الباركود';
+    await _zxingReader.decodeFromConstraints({video:{facingMode:'environment'}},video,(result,err)=>{
+      if(result){
+        const code=result.getText();
+        stopCameraScanner();
+        if(!window.state) return;
+        const p=window.state.products.find(x=>x.barcode&&x.barcode.toLowerCase()===code.toLowerCase());
+        if(p){
+          const sel=document.getElementById('quickProduct');
+          if(sel){sel.value=p.id;updateQuickSale();}
+          showToast('✓ '+p.name,'success');
+        } else {
+          document.getElementById('barcodeInputWrap').style.display='block';
+          const inp=document.getElementById('barcodeInput');
+          if(inp) inp.value=code;
+          showToast('باركود: '+code+' — غير موجود','error');
+        }
+      }
+    });
+  } catch(e){
+    if(status) status.innerHTML=`<span style="color:var(--c-red)">⚠ تعذّر الوصول للكاميرا: ${e.message}</span>`;
+  }
+};
+
+window.stopCameraScanner = () => {
+  if(_zxingReader){try{_zxingReader.reset();}catch(e){}_zxingReader=null;}
+  const wrap=document.getElementById('cameraScannerWrap');
+  if(wrap) wrap.style.display='none';
+  const video=document.getElementById('scannerVideo');
+  if(video&&video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+};
+</script>
+</body>
+</html>

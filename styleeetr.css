@@ -193,21 +193,4 @@ body::before{
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(14px) scale(.95)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
 .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .page-title{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--c-text),var(--c-primary-bright));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-
-/* ====== MOBILE ====== */
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes scanLine{0%,100%{opacity:.4;top:30%}50%{opacity:1;top:65%}}
-@media(max-width:768px){
-  #sidebar{transform:translateX(100%)}
-  #sidebar.open{transform:translateX(0)}
-  .main-content{margin-right:0}
-  .topbar-mobile{display:flex}
-  .page{padding:14px 14px 80px}
-  .sale-type-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-  .sale-type-card{padding:10px 6px}
-  .sale-type-card i{font-size:20px}
-  .sale-type-card .stc-title{font-size:11px}
-  .metrics{grid-template-columns:repeat(2,1fr);gap:10px}
-  .dash-bottom-grid{grid-template-columns:1fr}
-  .metric-val{font-size:20px}
-}
+ 

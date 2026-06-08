@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BatLab — إدارة المحل</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>نظام إدارة المحل - BatLab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -14,6 +14,241 @@
   0%,100%{ opacity:1; transform:scale(1); }
   50%     { opacity:.4; transform:scale(1.4); }
 }
+
+/* =============================================
+   MOBILE RESPONSIVE — شامل كل المقاسات
+   ============================================= */
+
+/* --- تأكد الـ viewport صح --- */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* --- منع الـ overflow الأفقي --- */
+html, body { overflow-x: hidden; max-width: 100vw; }
+
+/* ==============================
+   الهواتف الصغيرة جداً (< 360px)
+   ex: iPhone SE, Galaxy A01
+   ============================== */
+@media (max-width: 359px) {
+  .page { padding: 10px 8px !important; }
+  .page-header { padding: 0 0 10px 0 !important; flex-wrap: wrap; gap: 8px; }
+  .page-title { font-size: 15px !important; }
+  .metric-card { padding: 12px 10px !important; }
+  .metric-val { font-size: 18px !important; }
+  .sale-form-card { padding: 12px 10px !important; }
+  .metrics { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .tabs { gap: 4px !important; }
+  .tab { font-size: 11px !important; padding: 6px 8px !important; }
+  .btn-primary { font-size: 12px !important; padding: 9px 12px !important; }
+  /* سعر البيع أصغر شوي */
+  #quickPriceTRY { font-size: 28px !important; }
+  /* زر صفحة المنتجات */
+  #page-products .page-header > div { flex-wrap: wrap !important; }
+  #page-products .page-header button { font-size: 11px !important; padding: 6px 10px !important; }
+}
+
+/* ==============================
+   الهواتف العادية (360px–479px)
+   ex: Galaxy S, iPhone 12 mini
+   ============================== */
+@media (max-width: 479px) {
+  .page { padding: 12px 12px !important; }
+  .page-header { flex-wrap: wrap; gap: 8px; }
+
+  /* Dashboard grid: أرباح الفاتورة والصيانة — عمود واحد */
+  #page-dashboard > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Metrics: 2 بالصف */
+  .metrics { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .metric-card { padding: 14px 12px !important; min-height: 80px !important; }
+  .metric-val { font-size: 20px !important; }
+  .metric-label { font-size: 11px !important; }
+
+  /* زر اختصار الكاشير */
+  #page-dashboard a[onclick*="sale"] { padding: 12px 14px !important; }
+
+  /* صفحة المنتجات — أزرار رأس الصفحة */
+  #page-products .page-header > div { flex-wrap: wrap !important; gap: 6px !important; }
+  #page-products .page-header button { font-size: 12px !important; padding: 7px 10px !important; }
+
+  /* بطاقات المنتجات */
+  .product-card { padding: 12px 10px !important; }
+
+  /* تسجيل عملية — حقول الكمية والسعر */
+  .sale-form-card { padding: 14px 12px !important; border-radius: 12px !important; }
+  .sale-summary-bar { flex-direction: column !important; gap: 8px !important; padding: 14px 12px !important; }
+  .sum-item { width: 100% !important; display: flex; justify-content: space-between; align-items: center; }
+  .sum-label { font-size: 12px !important; }
+  .sum-val { font-size: 18px !important; }
+
+  /* Modal */
+  #modal .modal-inner, #modalContent { padding: 16px 14px !important; }
+  .form-row { flex-direction: column !important; gap: 10px !important; }
+  .fg input, .fg select, .fg textarea { font-size: 15px !important; padding: 11px 12px !important; }
+
+  /* Tabs */
+  .tabs { gap: 4px !important; overflow-x: auto; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .tab { flex-shrink: 0; font-size: 12px !important; padding: 7px 10px !important; white-space: nowrap; }
+
+  /* سجل المبيعات */
+  .sale-row { padding: 10px 10px !important; }
+
+  /* صفحة الديون */
+  .debt-card { padding: 12px 10px !important; }
+
+  /* Toast */
+  .toast { font-size: 13px !important; padding: 10px 14px !important; left: 12px !important; right: 12px !important; bottom: 16px !important; }
+
+  /* قائمة العمليات الأخيرة */
+  #recentOps > div, #topChart > div { padding: 8px 6px !important; font-size: 12px !important; }
+}
+
+/* ==============================
+   الهواتف الكبيرة (480px–767px)
+   ex: iPhone Pro Max, Galaxy Ultra
+   ============================== */
+@media (min-width: 480px) and (max-width: 767px) {
+  .page { padding: 16px 14px !important; }
+  .metrics { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+  .metric-val { font-size: 22px !important; }
+
+  #page-dashboard > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-row { flex-direction: column !important; gap: 12px !important; }
+  .sale-summary-bar { gap: 12px !important; }
+  .sum-val { font-size: 20px !important; }
+}
+
+/* ==============================
+   التابلت الصغير (768px–1023px)
+   ex: iPad mini, Galaxy Tab S
+   ============================== */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .metrics { grid-template-columns: repeat(4, 1fr) !important; }
+  .metric-val { font-size: 22px !important; }
+  .page { padding: 20px 18px !important; }
+
+  #page-dashboard > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ==============================
+   الـ modal على الهواتف
+   ============================== */
+@media (max-width: 600px) {
+  #modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  #modalContent {
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92dvh !important;
+    overflow-y: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 20px 16px 32px !important;
+  }
+  /* PIN screen */
+  #pinScreen > div {
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    min-height: 100dvh !important;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ==============================
+   حقل سعر البيع — الكتابة دائماً سهلة
+   ============================== */
+#quickPriceTRY {
+  /* منع iOS من تكبير الصفحة عند الضغط على الحقل */
+  font-size: 34px !important;
+  -webkit-text-size-adjust: none;
+  touch-action: manipulation;
+}
+#quickQty {
+  font-size: 26px !important;
+  touch-action: manipulation;
+}
+
+/* ==============================
+   عام — input focus على الهاتف
+   ============================== */
+@media (max-width: 767px) {
+  input[type="number"],
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  select, textarea {
+    /* منع iOS zoom */
+    font-size: max(16px, 1em) !important;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+  }
+  /* استثناء حقول سعر البيع والكمية */
+  #quickPriceTRY { font-size: 34px !important; }
+  #quickQty { font-size: 26px !important; }
+
+  /* الـ topbar على الهاتف */
+  .topbar-mobile { padding: 0 12px !important; height: 52px !important; }
+
+  /* الـ sidebar overlay */
+  #sidebarOverlay.active { display: block !important; }
+
+  /* Dashboard profit grid عمود واحد على الهاتف */
+  .dash-profit-grid { grid-template-columns: 1fr !important; }
+
+  /* dash-bottom-grid عمود واحد */
+  .dash-bottom-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+
+  /* صفحة الكاشير — زر التأكيد أكبر */
+  #page-sale > .btn-primary {
+    padding: 16px !important;
+    font-size: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  /* بطاقة الملخص */
+  .sale-summary-bar {
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* اسم المنتج البحث */
+  #productNameSearch { font-size: 16px !important; padding: 12px 36px 12px 12px !important; }
+
+  /* القائمة المنسدلة للمنتجات */
+  #productNameDropdown > div { padding: 13px 14px !important; }
+  #productNameDropdown > div > div:first-child { font-size: 14px !important; }
+
+  /* صفحة إضافة بضاعة / منتج — form-row */
+  .fg label { font-size: 13px !important; margin-bottom: 5px !important; display: block; }
+
+  /* حقل اسم الزبون */
+  #quickCustomer { font-size: 16px !important; padding: 12px !important; }
+
+  /* الـ summary bar أفقي دائماً على الهاتف */
+  .sale-summary-bar { display: flex !important; flex-direction: row !important; justify-content: space-between !important; flex-wrap: wrap !important; }
+}
+
+/* ==============================
+   safe area لـ iPhone X وما فوق
+   ============================== */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #page-sale > .btn-primary {
+    margin-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  }
+  .topbar-mobile {
+    padding-top: max(0px, env(safe-area-inset-top)) !important;
+  }
+}
 </style>
 <link rel="icon" type="image/png" href="logo website.ico"/>
 
@@ -21,9 +256,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-  import { getFirestore, initializeFirestore, persistentLocalCache, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot }
+  import { getFirestore, initializeFirestore, persistentLocalCache, collection, addDoc, setDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot }
     from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-
 
 const firebaseConfig = {
     apiKey: "AIzaSyDiXog4yaxyMS64lQ3T2ZEitr_4e9NtSCA",
@@ -34,7 +268,6 @@ const firebaseConfig = {
     appId: "1:517550316753:web:15bddc3385b6a97b6bb9f0",
     measurementId: "G-393HKJNRDL"
   };
-
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   window._auth = auth;
@@ -47,7 +280,7 @@ const firebaseConfig = {
   window._doc = doc;
 
   // ======= LOCAL PIN =======
-  const LOCAL_PIN = '113355';
+  let _userLocalPin = '';
 
   function showPinScreen() {
     document.getElementById('loginScreen').style.display = 'none';
@@ -90,7 +323,7 @@ const firebaseConfig = {
 
   window._submitPin = () => {
     const val = (document.getElementById('pinInput')?.value || '').trim();
-    if (val === LOCAL_PIN) {
+    if (val === _userLocalPin) {
       document.getElementById('pinScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'flex';
       document.getElementById('userEmail').textContent = auth.currentUser?.email || '';
@@ -110,12 +343,32 @@ const firebaseConfig = {
     signOut(auth);
   };
 
-  // ======= AUTH STATE =======
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      showPinScreen();
+  // flag to block onAuthStateChanged navigation during registration
+  window._isRegistering = false;
 
+  // ======= AUTH STATE =======
+  onAuthStateChanged(auth, async (user) => {
+    // skip navigation if registration is in progress
+    if (window._isRegistering) return;
+    if (user) {
+      try {
+        const userSnap = await getDocs(query(collection(db, 'users'), where('uid', '==', user.uid)));
+        if (!userSnap.empty) {
+          const userData = userSnap.docs[0].data();
+          // جلب الـ PIN من حساب المستخدم
+          _userLocalPin = userData.localPin || '';
+          const now = new Date();
+          const expiresAt = new Date(userData.expiresAt);
+          if (now > expiresAt || userData.subscriptionStatus !== 'active') {
+            showSubscriptionExpired(userData.storeName || '');
+            return;
+          }
+        }
+      } catch(e) {}
+      showPinScreen();
     } else {
+      const expiredScreen = document.getElementById('expiredScreen');
+      if (expiredScreen) expiredScreen.style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('appScreen').style.display = 'none';
     }
@@ -131,12 +384,100 @@ const firebaseConfig = {
   };
 
   window.doRegister = async () => {
-    const email = document.getElementById('loginEmail').value.trim();
-    const pass = document.getElementById('loginPass').value;
-    if(pass.length < 6) { showToast('كلمة المرور 6 أحرف على الأقل','error'); return; }
-    try { await createUserWithEmailAndPassword(auth, email, pass); showToast('تم إنشاء الحساب','success'); }
-    catch(e) { showToast('خطأ: '+e.message,'error'); }
+    const storeName = (document.getElementById('regStoreName')?.value || '').trim();
+    const email = (document.getElementById('regEmail')?.value || '').trim();
+    const pass = document.getElementById('regPass')?.value || '';
+    const passConfirm = document.getElementById('regPassConfirm')?.value || '';
+    const btn = document.getElementById('registerBtn');
+    if (!storeName) { showToast('أدخل اسم المحل', 'error'); return; }
+    if (!email) { showToast('أدخل البريد الإلكتروني', 'error'); return; }
+    if (pass.length < 6) { showToast('كلمة المرور 6 أحرف على الأقل', 'error'); return; }
+    if (pass !== passConfirm) { showToast('كلمتا المرور غير متطابقتان', 'error'); return; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> جاري إنشاء الحساب...'; }
+
+    window._isRegistering = true;
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+      const uid = userCredential.user.uid;
+      const now = new Date();
+      const expiresAt = new Date(now);
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+      await setDoc(doc(db, 'users', uid), {
+        uid,
+        storeName,
+        email,
+        createdAt: now.toISOString(),
+        expiresAt: expiresAt.toISOString(),
+        subscriptionStatus: 'active'
+      });
+      window._isRegistering = false;
+      showToast('تم إنشاء الحساب بنجاح ✓ جاري الدخول...', 'success');
+      // now navigate — doc is saved
+      showPinScreen();
+    } catch(e) {
+      window._isRegistering = false;
+      showToast('خطأ في إنشاء الحساب: ' + e.message, 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-user-plus"></i> إنشاء الحساب'; }
+    }
   };
+
+  window.switchAuthTab = (tab) => {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const tabLoginBtn = document.getElementById('tabLoginBtn');
+    const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+    const activeStyle = 'linear-gradient(135deg,#4F46E5,#6366F1)';
+    const inactiveStyle = 'transparent';
+    if (tab === 'login') {
+      if (loginForm) loginForm.style.display = 'block';
+      if (registerForm) registerForm.style.display = 'none';
+      if (tabLoginBtn) { tabLoginBtn.style.background = activeStyle; tabLoginBtn.style.color = '#fff'; }
+      if (tabRegisterBtn) { tabRegisterBtn.style.background = inactiveStyle; tabRegisterBtn.style.color = 'var(--c-text3)'; }
+    } else {
+      if (loginForm) loginForm.style.display = 'none';
+      if (registerForm) registerForm.style.display = 'block';
+      if (tabRegisterBtn) { tabRegisterBtn.style.background = activeStyle; tabRegisterBtn.style.color = '#fff'; }
+      if (tabLoginBtn) { tabLoginBtn.style.background = inactiveStyle; tabLoginBtn.style.color = 'var(--c-text3)'; }
+    }
+  };
+
+  function showSubscriptionExpired(storeName) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'none';
+    const pinScreen = document.getElementById('pinScreen');
+    if (pinScreen) pinScreen.style.display = 'none';
+    let expiredScreen = document.getElementById('expiredScreen');
+    if (!expiredScreen) {
+      expiredScreen = document.createElement('div');
+      expiredScreen.id = 'expiredScreen';
+      expiredScreen.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--c-bg);padding:20px';
+      document.body.appendChild(expiredScreen);
+    }
+    expiredScreen.style.display = 'flex';
+    const CONTACT_NUMBER = '0-552-322-3191';
+    expiredScreen.innerHTML = `
+      <div style="background:var(--c-bg2);border:1px solid var(--c-border);border-radius:20px;padding:36px 28px;max-width:380px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.4);text-align:center">
+        <div style="width:72px;height:72px;background:rgba(239,68,68,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;border:1px solid rgba(239,68,68,0.3)">
+          <i class="ti ti-lock" style="font-size:34px;color:#EF4444"></i>
+        </div>
+        ${storeName ? `<div style="font-size:13px;color:var(--c-text3);margin-bottom:6px;font-family:'Cairo',sans-serif">${storeName}</div>` : ''}
+        <div style="font-size:20px;font-weight:700;color:var(--c-text);margin-bottom:10px;font-family:'Cairo',sans-serif">انتهى الاشتراك</div>
+        <div style="font-size:14px;color:var(--c-text3);margin-bottom:24px;font-family:'Cairo',sans-serif;line-height:1.85">
+          لقد انتهت مدة اشتراكك في النظام.<br>
+          للتجديد والاستمرار في الاستخدام，<br>
+          تواصل معنا على الرقم التالي:
+        </div>
+        <a href="https://wa.me/905523223191" target="_blank" rel="noopener"
+          style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;background:linear-gradient(135deg,#059669,#10B981);border-radius:14px;text-decoration:none;color:#fff;font-size:18px;font-family:'Cairo',sans-serif;font-weight:700;margin-bottom:12px;box-shadow:0 4px 16px rgba(16,185,129,0.35)">
+          <i class="ti ti-phone-call"></i> ${CONTACT_NUMBER}
+        </a>
+        <button onclick="window.doLogout()"
+          style="width:100%;padding:10px;background:transparent;border:1px solid var(--c-border);border-radius:12px;cursor:pointer;color:var(--c-text3);font-size:13px;font-family:'Cairo',sans-serif;font-weight:600">
+          تسجيل خروج
+        </button>
+      </div>`;
+  }
+  window.showSubscriptionExpired = showSubscriptionExpired;
 
   window.doLogout = () => { unsubscribeAll(); signOut(auth); };
 
@@ -270,324 +611,14 @@ const firebaseConfig = {
         ...state.sales.map(s => deleteDoc(doc(db,'sales',s.id))),
         ...state.wastes.map(w => deleteDoc(doc(db,'wastes',w.id))),
         ...(state.extraProfits||[]).map(ep => deleteDoc(doc(db,'extraProfits',ep.id))),
-        ...(state.expenses||[]).map(ex => deleteDoc(doc(db,'expenses',ex.id))),
-        ...(state.loans||[]).map(ln => deleteDoc(doc(db,'loans',ln.id)))
+        ...(state.expenses||[]).map(ex => deleteDoc(doc(db,'expenses',ex.id)))
       ];
       await Promise.all(allDocs);
-      state.products=[]; state.sales=[]; state.wastes=[]; state.extraProfits=[]; state.expenses=[]; state.loans=[];
+      state.products=[]; state.sales=[]; state.wastes=[]; state.extraProfits=[]; state.expenses=[];
       updateDashboard(); renderProducts(); renderSales(); renderDebts(); renderWaste(); renderExtraProfits(); renderExpenses(); populateQuickDropdown();
       showToast('تم مسح جميع البيانات','success');
     } catch(e) { showToast('خطأ: '+e.message,'error'); }
     showLoading(false);
-  };
-
-  // ======= LOANS (ديون مستقلة - TRY فقط) =======
-  window.openAddLoanModal = () => {
-    setModal(`
-      <div class="modal-hdr">
-        <div class="modal-title"><i class="ti ti-user-dollar" style="color:#F59E0B;margin-left:6px"></i> تسجيل دين جديد</div>
-        <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="fg">
-        <label>اسم المستدين</label>
-        <input type="text" id="loanName" placeholder="اسم الشخص"
-          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif">
-      </div>
-      <div class="fg">
-        <label>المبلغ (₺ ليرة تركية)</label>
-        <div style="display:flex;gap:8px">
-          <div class="price-cur-badge">₺</div>
-          <input type="number" id="loanAmt" placeholder="0" step="1" min="0"
-            style="flex:1;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:16px;font-family:'Cairo',sans-serif;font-weight:700">
-        </div>
-      </div>
-      <div class="fg">
-        <label>ملاحظة (اختياري)</label>
-        <input type="text" id="loanNote" placeholder="سبب الدين أو ملاحظة..."
-          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
-      </div>
-      <div class="fg">
-        <label>تاريخ الاستحقاق (اختياري)</label>
-        <input type="date" id="loanDueDate"
-          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
-      </div>
-      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:10px;background:linear-gradient(135deg,#F59E0B,#D97706);border-color:#D97706" onclick="addLoan()">
-        <i class="ti ti-check"></i> تسجيل الدين
-      </button>`, true);
-    setTimeout(()=>{ const el=document.getElementById('loanName'); if(el) el.focus(); },50);
-  };
-
-  window.addLoan = async () => {
-    if(window._busy){showToast('جاري تنفيذ عملية، انتظر لحظة...','error');return;}
-    const name=(document.getElementById('loanName')?.value||'').trim();
-    const amtTRY=parseFloat(document.getElementById('loanAmt')?.value)||0;
-    const note=(document.getElementById('loanNote')?.value||'').trim();
-    const dueDate=document.getElementById('loanDueDate')?.value||'';
-    if(!name){showToast('أدخل اسم المستدين','error');return;}
-    if(!amtTRY||amtTRY<=0){showToast('أدخل المبلغ','error');return;}
-    const data={
-      name, amtTRY, note, dueDate,
-      date: new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString(),
-      userId: auth.currentUser.uid,
-      paid: false
-    };
-    setBusy(true,'جاري تسجيل الدين...');
-    try {
-      await addDoc(collection(db,'loans'), data);
-      closeModal();
-      showToast('تم تسجيل الدين ✓','success');
-    } catch(e){showToast('خطأ: '+e.message,'error');}
-    finally { setBusy(false); }
-  };
-
-  window.markLoanPaid = async (id) => {
-    if(window._busy){showToast('جاري تنفيذ عملية، انتظر لحظة...','error');return;}
-    if(!confirm('تأكيد تسديد هذا الدين؟')) return;
-    setBusy(true,'جاري التسديد...');
-    try {
-      await deleteDoc(doc(db,'loans',id));
-      showToast('تم تسديد الدين وحذفه ✓','success');
-    } catch(e){showToast('خطأ: '+e.message,'error');}
-    finally { setBusy(false); }
-  };
-
-  window.deleteLoan = async (id) => {
-    if(window._busy){showToast('جاري تنفيذ عملية، انتظر لحظة...','error');return;}
-    if(!confirm('حذف هذا الدين نهائياً؟')) return;
-    setBusy(true,'جاري الحذف...');
-    try {
-      await deleteDoc(doc(db,'loans',id));
-      showToast('تم حذف الدين','success');
-    } catch(e){showToast('خطأ: '+e.message,'error');}
-    finally { setBusy(false); }
-  };
-
-  window.openEditLoanModal = (id) => {
-    const loan = (window.state.loans||[]).find(l=>l.id===id);
-    if(!loan) return;
-    setModal(`
-      <div class="modal-hdr">
-        <div class="modal-title">تعديل الدين</div>
-        <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="fg">
-        <label>اسم المستدين</label>
-        <input type="text" id="eloanName" value="${(loan.name||'').replace(/"/g,'&quot;')}"
-          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif">
-      </div>
-      <div class="fg">
-        <label>المبلغ (₺)</label>
-        <div style="display:flex;gap:8px">
-          <div class="price-cur-badge">₺</div>
-          <input type="number" id="eloanAmt" value="${loan.amtTRY||0}" step="1" min="0"
-            style="flex:1;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:16px;font-family:'Cairo',sans-serif;font-weight:700">
-        </div>
-      </div>
-      <div class="fg">
-        <label>ملاحظة</label>
-        <input type="text" id="eloanNote" value="${(loan.note||'').replace(/"/g,'&quot;')}" placeholder="ملاحظة (اختياري)"
-          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
-      </div>
-      <div class="fg">
-        <label>تاريخ الاستحقاق</label>
-        <input type="date" id="eloanDueDate" value="${loan.dueDate||''}"
-          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
-      </div>
-      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:10px" onclick="saveLoanEdit('${id}')">
-        <i class="ti ti-check"></i> حفظ التعديلات
-      </button>`, true);
-  };
-
-  window.saveLoanEdit = async (id) => {
-    if(window._busy){showToast('جاري تنفيذ عملية، انتظر لحظة...','error');return;}
-    const name=(document.getElementById('eloanName')?.value||'').trim();
-    const amtTRY=parseFloat(document.getElementById('eloanAmt')?.value)||0;
-    const note=(document.getElementById('eloanNote')?.value||'').trim();
-    const dueDate=document.getElementById('eloanDueDate')?.value||'';
-    if(!name||!amtTRY){showToast('يرجى ملء الحقول المطلوبة','error');return;}
-    setBusy(true,'جاري حفظ التعديلات...');
-    try {
-      await updateDoc(doc(db,'loans',id),{name,amtTRY,note,dueDate});
-      closeModal();
-      showToast('تم تعديل الدين ✓','success');
-    } catch(e){showToast('خطأ: '+e.message,'error');}
-    finally { setBusy(false); }
-  };
-
-  // دفعة جزئية على الدين
-  window.openLoanPartialModal = (id) => {
-    const loan = (window.state.loans||[]).find(l=>l.id===id);
-    if(!loan) return;
-    const paid = (loan.payments||[]).reduce((s,p)=>s+p.amt,0);
-    const remaining = loan.amtTRY - paid;
-    setModal(`
-      <div class="modal-hdr">
-        <div class="modal-title"><i class="ti ti-coin" style="color:#10B981;margin-left:6px"></i> دفعة جزئية — ${loan.name}</div>
-        <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
-      </div>
-      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-size:11px;color:var(--c-text3);margin-bottom:2px">المبلغ الكلي</div>
-            <div style="font-size:15px;font-weight:700;color:var(--c-text3)">₺${parseFloat(loan.amtTRY).toFixed(0)}</div>
-          </div>
-          ${paid>0?`<div>
-            <div style="font-size:11px;color:var(--c-text3);margin-bottom:2px">مدفوع</div>
-            <div style="font-size:15px;font-weight:700;color:#10B981">₺${paid.toFixed(0)}</div>
-          </div>`:''}
-          <div>
-            <div style="font-size:11px;color:var(--c-text3);margin-bottom:2px">المتبقي</div>
-            <div style="font-size:22px;font-weight:700;color:#F59E0B">₺${remaining.toFixed(0)}</div>
-          </div>
-        </div>
-        ${paid>0?`<div style="margin-top:10px;height:6px;background:var(--c-bg3);border-radius:3px;overflow:hidden">
-          <div style="width:${Math.min(100,(paid/loan.amtTRY*100)).toFixed(1)}%;height:100%;background:linear-gradient(90deg,#10B981,#34D399);border-radius:3px"></div>
-        </div>`:''}
-      </div>
-      <div class="fg">
-        <label>مبلغ الدفعة (₺)</label>
-        <div style="display:flex;gap:8px">
-          <div class="price-cur-badge">₺</div>
-          <input type="number" id="loanPartialAmt" placeholder="0" step="1" min="1" max="${remaining.toFixed(0)}"
-            style="flex:1;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:18px;font-family:'Cairo',sans-serif;font-weight:700">
-        </div>
-      </div>
-      <div class="fg">
-        <label>ملاحظة (اختياري)</label>
-        <input type="text" id="loanPartialNote" placeholder="مثلاً: دفعة أولى..."
-          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
-      </div>
-      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:10px;background:linear-gradient(135deg,#059669,#10B981);border-color:#059669" onclick="submitLoanPartial('${id}',${remaining})">
-        <i class="ti ti-cash"></i> تسجيل الدفعة
-      </button>`, true);
-    setTimeout(()=>{ const el=document.getElementById('loanPartialAmt'); if(el) el.focus(); },50);
-  };
-
-  window.submitLoanPartial = async (id, remaining) => {
-    if(window._busy){showToast('جاري تنفيذ عملية، انتظر لحظة...','error');return;}
-    const amt = parseFloat(document.getElementById('loanPartialAmt')?.value)||0;
-    const note = (document.getElementById('loanPartialNote')?.value||'').trim();
-    if(!amt||amt<=0){ showToast('أدخل مبلغ الدفعة','error'); return; }
-    if(amt > remaining+0.5){ showToast('المبلغ أكبر من المتبقي (₺'+remaining.toFixed(0)+')','error'); return; }
-    const loan = (window.state.loans||[]).find(l=>l.id===id);
-    if(!loan) return;
-    const payments = loan.payments||[];
-    const newPayment = { amt, note, date: new Date().toISOString().split('T')[0], createdAt: new Date().toISOString() };
-    const newPayments = [...payments, newPayment];
-    const totalPaid = newPayments.reduce((s,p)=>s+p.amt,0);
-    setBusy(true,'جاري تسجيل الدفعة...');
-    try {
-      if(totalPaid >= loan.amtTRY - 0.5) {
-        // تسدّد كامل الدين — احذفه
-        await deleteDoc(doc(db,'loans',id));
-        closeModal();
-        showToast('✓ تم تسديد الدين كاملاً وحذفه','success');
-      } else {
-        await updateDoc(doc(db,'loans',id),{ payments: newPayments });
-        closeModal();
-        showToast('✓ تم تسجيل الدفعة ₺'+amt.toFixed(0),'success');
-      }
-    } catch(e){ showToast('خطأ: '+e.message,'error'); }
-    finally { setBusy(false); }
-  };
-
-  window.renderLoans = () => {
-    const loans = window.state.loans || [];
-    const today = new Date().toISOString().split('T')[0];
-    // المتبقي = amtTRY - مجموع الدفعات
-    const totalRemaining = loans.reduce((s,l)=>{
-      const paid=(l.payments||[]).reduce((a,p)=>a+p.amt,0);
-      return s+Math.max(0,l.amtTRY-paid);
-    },0);
-    const totalEl = document.getElementById('loansTotalAmt');
-    if(totalEl) totalEl.textContent = '₺'+totalRemaining.toFixed(0);
-    const countEl = document.getElementById('loansCountBadge');
-    if(countEl) countEl.textContent = loans.length;
-    const el = document.getElementById('loansList');
-    if(!el) return;
-    if(!loans.length){
-      el.innerHTML=`<div class="empty"><i class="ti ti-user-off"></i><p>لا توجد ديون</p></div>`;
-      return;
-    }
-    el.innerHTML = loans.map(loan=>{
-      const paid = (loan.payments||[]).reduce((s,p)=>s+p.amt,0);
-      const remaining = Math.max(0, loan.amtTRY - paid);
-      const pct = loan.amtTRY>0 ? Math.min(100,(paid/loan.amtTRY*100)) : 0;
-      const isOverdue = loan.dueDate && loan.dueDate < today;
-      const isDueSoon = loan.dueDate && !isOverdue && loan.dueDate <= new Date(Date.now()+7*86400000).toISOString().split('T')[0];
-      const paymentsLog = (loan.payments||[]).length ? `
-        <div style="margin-top:10px;border-top:1px solid var(--c-border);padding-top:8px">
-          <div style="font-size:10px;color:var(--c-text3);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">سجل الدفعات</div>
-          ${[...(loan.payments||[])].reverse().map(p=>`
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,0.04)">
-              <div>
-                <span style="font-size:12px;font-weight:700;color:#10B981">+₺${parseFloat(p.amt).toFixed(0)}</span>
-                ${p.note?`<span style="font-size:11px;color:var(--c-text3);margin-right:6px">— ${p.note}</span>`:''}
-              </div>
-              <span style="font-size:10px;color:var(--c-text3)">${p.date||''}</span>
-            </div>`).join('')}
-        </div>` : '';
-      return `
-      <div style="padding:14px 16px;background:var(--c-bg3);border-radius:var(--radius-sm);margin-bottom:12px;border:1px solid ${isOverdue?'rgba(239,68,68,0.45)':isDueSoon?'rgba(245,158,11,0.4)':'var(--c-border)'};border-right:3px solid ${isOverdue?'var(--c-red)':isDueSoon?'var(--c-amber)':'#F59E0B'}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-              <span style="font-size:14px;font-weight:700;color:var(--c-text)">${loan.name}</span>
-              ${isOverdue?`<span style="font-size:10px;font-weight:700;color:var(--c-red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:5px;padding:1px 6px"><i class="ti ti-alert-triangle" style="vertical-align:-1px"></i> متأخر</span>`:''}
-              ${isDueSoon?`<span style="font-size:10px;font-weight:700;color:var(--c-amber);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:5px;padding:1px 6px"><i class="ti ti-clock" style="vertical-align:-1px"></i> قريباً</span>`:''}
-            </div>
-            <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-              <div style="font-size:22px;font-weight:700;color:#F59E0B">₺${remaining.toFixed(0)}</div>
-              ${paid>0?`<div style="font-size:12px;color:var(--c-text3)">متبقي من ₺${parseFloat(loan.amtTRY).toFixed(0)}</div>`:''}
-            </div>
-            ${paid>0?`<div style="margin-top:7px;margin-bottom:4px">
-              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--c-text3);margin-bottom:3px">
-                <span>مدفوع ₺${paid.toFixed(0)}</span>
-                <span>${pct.toFixed(0)}%</span>
-              </div>
-              <div style="height:5px;background:var(--c-bg);border-radius:3px;overflow:hidden">
-                <div style="width:${pct.toFixed(1)}%;height:100%;background:linear-gradient(90deg,#10B981,#34D399);border-radius:3px;transition:width .4s"></div>
-              </div>
-            </div>`:''}
-            ${loan.note?`<div style="font-size:12px;color:var(--c-text2);margin-top:4px"><i class="ti ti-notes" style="font-size:11px;vertical-align:-1px;opacity:.6"></i> ${loan.note}</div>`:''}
-            <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
-              <span style="font-size:11px;color:var(--c-text3)"><i class="ti ti-calendar" style="vertical-align:-1px"></i> ${loan.date||''}</span>
-              ${loan.dueDate?`<span style="font-size:11px;color:${isOverdue?'var(--c-red)':isDueSoon?'var(--c-amber)':'var(--c-text3)'}"><i class="ti ti-calendar-due" style="vertical-align:-1px"></i> استحقاق: ${loan.dueDate}</span>`:''}
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px;margin-right:10px;flex-shrink:0">
-            <button onclick="markLoanPaid('${loan.id}')" title="تسديد كامل"
-              style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;color:#10B981;font-size:11px;font-family:'Cairo',sans-serif;font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap"
-              onmouseover="this.style.background='rgba(16,185,129,0.2)'"
-              onmouseout="this.style.background='rgba(16,185,129,0.1)'">
-              <i class="ti ti-check"></i> تسديد كامل
-            </button>
-            <button onclick="openLoanPartialModal('${loan.id}')" title="دفعة جزئية"
-              style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--c-primary-bright);font-size:11px;font-family:'Cairo',sans-serif;font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap"
-              onmouseover="this.style.background='rgba(99,102,241,0.2)'"
-              onmouseout="this.style.background='rgba(99,102,241,0.1)'">
-              <i class="ti ti-cash"></i> دفعة جزئية
-            </button>
-            <div style="display:flex;gap:4px">
-              <button onclick="openEditLoanModal('${loan.id}')" title="تعديل"
-                style="flex:1;background:var(--c-bg);border:1px solid var(--c-border);border-radius:6px;width:28px;height:28px;cursor:pointer;color:var(--c-text2);display:flex;align-items:center;justify-content:center;font-size:13px"
-                onmouseover="this.style.borderColor='rgba(59,130,246,.4)';this.style.color='var(--c-primary-bright)'"
-                onmouseout="this.style.borderColor='var(--c-border)';this.style.color='var(--c-text2)'">
-                <i class="ti ti-edit"></i>
-              </button>
-              <button onclick="deleteLoan('${loan.id}')" title="حذف"
-                style="flex:1;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:6px;width:28px;height:28px;cursor:pointer;color:var(--c-red);display:flex;align-items:center;justify-content:center;font-size:13px"
-                onmouseover="this.style.background='rgba(239,68,68,0.15)'"
-                onmouseout="this.style.background='rgba(239,68,68,0.06)'">
-                <i class="ti ti-trash"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-        ${paymentsLog}
-      </div>`;
-    }).join('');
   };
 
   // ======= EXPENSES =======
@@ -668,12 +699,15 @@ const firebaseConfig = {
   // ======= STATE =======
   window.state = {
     rate: 32.5,
-    products: [], sales: [], wastes: [], extraProfits: [], expenses: [], loans: [],
+    products: [], sales: [], wastes: [], extraProfits: [], expenses: [],
     productFilter: 'all', saleFilter: 'all',
     activePage: 'dashboard', activeProductSub: 'all',
-    weekStartDate: null,
-    salesOffset: 0,
-    costOffset: 0
+    weekStartDate: null,   // تاريخ بداية الأسبوع الحالي
+    salesOffset: 0,        // مجموع مبيعات الأسابيع السابقة
+    costOffset: 0,         // مجموع تكاليف الأسابيع السابقة
+    dashPeriod: 'all',     // فلتر الداشبورد: all | today | yesterday | week | month | custom
+    dashFrom: '',          // من تاريخ (للفلتر المخصص)
+    dashTo: ''             // إلى تاريخ (للفلتر المخصص)
   };
   // local alias
   const state = window.state;
@@ -697,18 +731,20 @@ const firebaseConfig = {
 
   function subscribeCollection(colName, stateKey, onUpdate, errLabel) {
     const uid = auth.currentUser.uid;
-    // sales and wastes are indexed by 'date', others by 'createdAt'
-    const orderField = (colName === 'sales' || colName === 'wastes') ? 'date' : 'createdAt';
-    const q = query(collection(db, colName), where('userId','==',uid));
+    // sales and wastes use composite index (userId + date)
+    // extraProfits and expenses: query by userId only, sort client-side to avoid index requirement
+    let q;
+    // no orderBy on any collection — sort client-side to avoid composite index requirement
+    q = query(collection(db, colName), where('userId','==',uid));
     const unsub = onSnapshot(q,
       snap => {
-        const docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
-        // Sort in JS to avoid needing composite indexes
-        docs.sort((a, b) => {
-          const va = a[orderField] || '';
-          const vb = b[orderField] || '';
-          return vb.localeCompare(va);
-        });
+        let docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        // sort client-side: sales/wastes by date desc, others by createdAt desc
+        if (colName === 'sales' || colName === 'wastes') {
+          docs.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        } else {
+          docs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        }
         window.state[stateKey] = docs;
         onUpdate();
         setLiveIndicator(true);
@@ -726,7 +762,6 @@ const firebaseConfig = {
     renderWaste();
     renderExtraProfits();
     renderExpenses();
-    renderLoans();
     populateQuickDropdown();
   }
 
@@ -750,7 +785,6 @@ const firebaseConfig = {
       subscribeCollection('wastes',      'wastes',      onEach, 'بالهدر');
       subscribeCollection('extraProfits','extraProfits',onEach, 'بالأرباح الإضافية');
       subscribeCollection('expenses',    'expenses',    onEach, 'بالمصاريف');
-      subscribeCollection('loans',       'loans',       onEach, 'بالديون');
     });
   }
 
@@ -965,7 +999,7 @@ const firebaseConfig = {
     const pid=val('wProduct'), qty=parseInt(val('wQty'));
     const p=state.products.find(x=>x.id===pid);
     if(!p) return;
-    if(qty>p.qty){showToast('الكمية المتاحة: '+p.qty,'error');return;}
+    if(qty>p.qty){showToast('الكم �ة المتاحة: '+p.qty,'error');return;}
     const buyUSD=p.currency==='usd'?p.buyPrice:p.buyPrice/state.rate;
     const data={productId:pid,productName:p.name,qty,type:val('wType'),reason:val('wReason')||'غير محدد',
       date:val('wDate')||new Date().toISOString().split('T')[0],valueUSD:buyUSD*qty,createdAt:new Date().toISOString(),userId:auth.currentUser.uid};
@@ -1046,9 +1080,67 @@ const firebaseConfig = {
         <div class="fg"><label>تاريخ الدين</label><input type="date" id="dDate" value="${new Date().toISOString().split('T')[0]}"></div>
         <div class="fg"><label>تاريخ الاستحقاق</label><input type="date" id="dDueDate" value="${new Date(Date.now()+30*86400000).toISOString().split('T')[0]}"></div>
       </div>
-      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:10px" onclick="addManualDebt()">
+
+      <!-- الربح من الدين -->
+      <div class="fg" style="margin-top:12px">
+        <label>ربحك من الدين (اختياري)</label>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <div class="price-cur-badge">USD $</div>
+          <input type="number" id="dProfitUSD" placeholder="0.00" step="0.01" value="0"
+            oninput="syncDebtProfit('usd')"
+            style="flex:1;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;font-weight:600">
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="price-cur-badge">TRY ₺</div>
+          <input type="number" id="dProfitTRY" placeholder="0" value="0"
+            oninput="syncDebtProfit('try')"
+            style="flex:1;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;font-weight:600">
+        </div>
+        <div style="font-size:11px;color:var(--c-text3);margin-top:5px"><i class="ti ti-info-circle"></i> اترك صفر إذا ما بدك تحسب ربح </div>
+      </div>
+
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:14px" onclick="addManualDebt()">
         <i class="ti ti-check"></i> تسجيل الدين
       </button>`, true);
+  };
+
+  window.syncDebtProfit = (from) => {
+    if(from==='usd'){
+      const v=parseFloat(document.getElementById('dProfitUSD')?.value)||0;
+      const t=document.getElementById('dProfitTRY');
+      if(t) t.value=v?(v*state.rate).toFixed(0):'0';
+    } else {
+      const v=parseFloat(document.getElementById('dProfitTRY')?.value)||0;
+      const u=document.getElementById('dProfitUSD');
+      if(u) u.value=v?(v/state.rate).toFixed(2):'0';
+    }
+  };
+
+  window.addManualDebt = async () => {
+    if(window._busy){showToast('جاري تنفيذ عملية، انتظر لحظة...','error');return;}
+    const customer=(document.getElementById('dCustomer')?.value||'').trim();
+    const phone=(document.getElementById('dPhone')?.value||'').trim();
+    const desc=(document.getElementById('dDesc')?.value||'').trim()||'دين مباشر';
+    const amtUSD=parseFloat(document.getElementById('dAmtUSD')?.value)||0;
+    const profitUSD=parseFloat(document.getElementById('dProfitUSD')?.value)||0;
+    const date=document.getElementById('dDate')?.value||new Date().toISOString().split('T')[0];
+    const dueDate=document.getElementById('dDueDate')?.value||'';
+    if(!customer){showToast('أدخل اسم المدين','error');return;}
+    if(!amtUSD){showToast('أدخل المبلغ','error');return;}
+    // cost = price - profit → هيك الربح = profitUSD بالضبط
+    const costUSD = amtUSD - profitUSD;
+    const saleData={
+      productId:'manual',productName:desc,qty:1,price:amtUSD,currency:'usd',
+      type:'debt',customer,phone,date,dueDate,cost:costUSD,
+      createdAt:new Date().toISOString(),userId:auth.currentUser.uid
+    };
+    setBusy(true,'جاري تسجيل الدين...');
+    try {
+      await addDoc(collection(db,'sales'),saleData);
+      closeModal();
+      showToast('تم تسجيل الدين','success');
+    } catch(e){showToast('خطأ: '+e.message,'error');}
+    finally { setBusy(false); }
   };
 
   window.syncDebtAmt = (from) => {
@@ -1061,30 +1153,6 @@ const firebaseConfig = {
       const u=document.getElementById('dAmtUSD');
       if(u) u.value=v?(v/state.rate).toFixed(2):'';
     }
-  };
-
-  window.addManualDebt = async () => {
-    if(window._busy){showToast('جاري تنفيذ عملية، انتظر لحظة...','error');return;}
-    const customer=(document.getElementById('dCustomer')?.value||'').trim();
-    const phone=(document.getElementById('dPhone')?.value||'').trim();
-    const desc=(document.getElementById('dDesc')?.value||'').trim()||'دين مباشر';
-    const amtUSD=parseFloat(document.getElementById('dAmtUSD')?.value)||0;
-    const date=document.getElementById('dDate')?.value||new Date().toISOString().split('T')[0];
-    const dueDate=document.getElementById('dDueDate')?.value||'';
-    if(!customer){showToast('أدخل اسم المدين','error');return;}
-    if(!amtUSD){showToast('أدخل المبلغ','error');return;}
-    const saleData={
-      productId:'manual',productName:desc,qty:1,price:amtUSD,currency:'usd',
-      type:'debt',customer,phone,date,dueDate,cost:0,createdAt:new Date().toISOString(),userId:auth.currentUser.uid
-    };
-    setBusy(true,'جاري تسجيل الدين...');
-    try {
-      const ref=await addDoc(collection(db,'sales'),saleData);
-      state.sales.unshift({id:ref.id,...saleData});
-      closeModal(); renderDebts(); renderSales(); updateDashboard();
-      showToast('تم تسجيل الدين','success');
-    } catch(e){showToast('خطأ: '+e.message,'error');}
-    finally { setBusy(false); }
   };
 
   window.openEditDebtModal = (saleId) => {
@@ -1223,42 +1291,110 @@ const firebaseConfig = {
   };
 
   // ======= RENDER =======
+  // ======= DASH PERIOD FILTER =======
+  window.setDashPeriod = (period) => {
+    window.state.dashPeriod = period;
+    const customRow = document.getElementById('dashCustomRow');
+    if (customRow) customRow.style.display = period === 'custom' ? 'flex' : 'none';
+    // تحديث أزرار الفلتر
+    ['all','today','yesterday','week','month','custom'].forEach(p => {
+      const btn = document.getElementById('dashBtn_'+p);
+      if (btn) {
+        const active = p === period;
+        btn.style.background = active ? 'linear-gradient(135deg,#4F46E5,#6366F1)' : 'var(--c-bg3)';
+        btn.style.color = active ? '#fff' : 'var(--c-text2)';
+        btn.style.borderColor = active ? 'rgba(99,102,241,0.6)' : 'var(--c-border)';
+        btn.style.fontWeight = active ? '700' : '500';
+      }
+    });
+    if (period !== 'custom') updateDashboard();
+  };
+
+  window.applyCustomDashRange = () => {
+    const from = (document.getElementById('dashFromDate')||{}).value || '';
+    const to   = (document.getElementById('dashToDate')||{}).value || '';
+    if (!from && !to) { showToast('اختر تاريخاً على الأقل','error'); return; }
+    window.state.dashFrom = from;
+    window.state.dashTo   = to;
+    updateDashboard();
+  };
+
   window.updateDashboard = () => {
     const wsd = window.state.weekStartDate;
-    // المبيعات تحسب من كل السجل ثم نطرح الـ offset (مبيعات الأسابيع السابقة)
-    const allSalesAll = state.sales;
-    const allExtraProfits = (state.extraProfits||[]);
-    // المصاريف مفلترة بالأسبوع (تتصفر فعلياً بالحذف، الفلتر احتياطي)
-    const allExpenses = (state.expenses||[]);
+    const period = window.state.dashPeriod || 'all';
+    const today = new Date().toISOString().split('T')[0];
+
+    // حساب نطاق التاريخ حسب الفلتر المختار
+    let filterFrom = null, filterTo = null;
+    if (period === 'today') {
+      filterFrom = filterTo = today;
+    } else if (period === 'yesterday') {
+      const y = new Date(); y.setDate(y.getDate() - 1);
+      filterFrom = filterTo = y.toISOString().split('T')[0];
+    } else if (period === 'week') {
+      const d = new Date();
+      const day = d.getDay(); // 0=Sun
+      d.setDate(d.getDate() - ((day + 6) % 7)); // بداية الأسبوع الاثنين
+      filterFrom = d.toISOString().split('T')[0];
+      filterTo = today;
+    } else if (period === 'month') {
+      const d = new Date(); d.setDate(1);
+      filterFrom = d.toISOString().split('T')[0];
+      filterTo = today;
+    } else if (period === 'custom') {
+      filterFrom = window.state.dashFrom || null;
+      filterTo   = window.state.dashTo   || null;
+    }
+
+    // فلترة المبيعات والمصاريف حسب الفترة
+    const inRange = (dateStr) => {
+      if (!dateStr) return period === 'all';
+      if (filterFrom && dateStr < filterFrom) return false;
+      if (filterTo   && dateStr > filterTo)   return false;
+      return true;
+    };
+
+    const filteredSales    = period === 'all' ? state.sales : state.sales.filter(s => inRange(s.date||''));
+    const filteredExpenses = period === 'all' ? (state.expenses||[]) : (state.expenses||[]).filter(e => inRange(e.date||''));
+    const filteredEP       = period === 'all' ? (state.extraProfits||[]) : (state.extraProfits||[]).filter(p => {
+      const d = p.date || (p.createdAt||'').split('T')[0] || '';
+      return inRange(d);
+    });
+
+    const allSalesAll = filteredSales;
+    const allExtraProfits = filteredEP;
+    const allExpenses = filteredExpenses;
     // للرسم البياني وآخر العمليات
-    const allSales = wsd ? state.sales.filter(s => (s.date||'') >= wsd) : state.sales;
+    const allSales = period === 'all'
+      ? (wsd ? state.sales.filter(s => (s.date||'') >= wsd) : state.sales)
+      : filteredSales;
 
     const allSells  = allSalesAll.filter(s=>s.type!=='partial'&&s.type!=='return');
     const allReturns= allSalesAll.filter(s=>s.type==='return');
     const grossSales= allSells.reduce((s,x)=>s+x.price*x.qty,0) - allReturns.reduce((s,x)=>s+x.price*x.qty,0);
     const grossCost = allSells.reduce((s,x)=>s+(x.cost||0)*x.qty,0) - allReturns.reduce((s,x)=>s+(x.cost||0)*x.qty,0);
-    // نطرح مبيعات وتكاليف الأسابيع السابقة
-    const totalSales = grossSales - (state.salesOffset||0);
-    const totalCost  = grossCost  - (state.costOffset ||0);
+    // نطرح offset الأسابيع السابقة فقط في وضع "كامل"
+    const totalSales = period === 'all' ? grossSales - (state.salesOffset||0) : grossSales;
+    const totalCost  = period === 'all' ? grossCost  - (state.costOffset ||0) : grossCost;
     const salesProfit=totalSales-totalCost;
     const invoiceProfitExtra=allExtraProfits.filter(p=>p.type==='invoice').reduce((s,p)=>s+(p.amount||0),0);
     const maintenanceProfitExtra=allExtraProfits.filter(p=>p.type==='maintenance').reduce((s,p)=>s+(p.amount||0),0);
     const totalExpensesTRY=allExpenses.reduce((s,e)=>s+(e.amountTRY||0),0);
     const totalExpensesUSD=totalExpensesTRY/state.rate;
     const profit=salesProfit+invoiceProfitExtra+maintenanceProfitExtra-totalExpensesUSD;
+    // قيمة المخزون لا تتأثر بالفلتر أبداً
     const stock=state.products.reduce((s,p)=>{const v=p.currency==='usd'?p.buyPrice:p.buyPrice/state.rate;return s+v*p.qty;},0);
-    // الديون تحسب من كل السجل مش من الأسبوع فقط
+    // الديون تحسب من كل السجل دائماً
     const totalDebt=state.sales.filter(s=>s.type==='debt').reduce((s,x)=>s+x.price*x.qty,0);
     const totalPartial=state.sales.filter(s=>s.type==='partial').reduce((s,x)=>s+x.price,0);
     const debt=Math.max(0,totalDebt-totalPartial);
-    const today=new Date().toISOString().split('T')[0];
     const todayExpensesTRY=(state.expenses||[]).filter(e=>e.date===today).reduce((s,e)=>s+(e.amountTRY||0),0);
-    setText('mSales','$'+totalSales.toFixed(2)); setText('mSalesTry','₺'+(totalSales*state.rate).toFixed(0));
-    setText('mProfit','$'+profit.toFixed(2)); setText('mProfitTry','₺'+(profit*state.rate).toFixed(0));
-    setText('mStock','$'+stock.toFixed(2)); setText('mStockTry','₺'+(stock*state.rate).toFixed(0));
+    setText('mSalesTry','₺'+(totalSales*state.rate).toFixed(0)); setText('mSales','$'+totalSales.toFixed(2));
+    setText('mProfitTry','₺'+(profit*state.rate).toFixed(0)); setText('mProfit','$'+profit.toFixed(2));
+    setText('mStockTry','₺'+(stock*state.rate).toFixed(0)); setText('mStock','$'+stock.toFixed(2));
     setText('mDebt','$'+debt.toFixed(2)); setText('mDebtTry','₺'+(debt*state.rate).toFixed(0));
     setText('mExpenses','₺'+totalExpensesTRY.toFixed(0));
-    setText('mTodayExpenses','اليوم: ₺'+todayExpensesTRY.toFixed(0));
+    setText('mTodayExpenses', period === 'all' ? 'اليوم: ₺'+todayExpensesTRY.toFixed(0) : '');
     setText('invoiceProfitTotal','₺'+(invoiceProfitExtra*state.rate).toFixed(0));
     setText('invoiceProfitTotalTry','');
     setText('maintenanceProfitTotal','₺'+(maintenanceProfitExtra*state.rate).toFixed(0));
@@ -1299,7 +1435,7 @@ const firebaseConfig = {
     const filter=state.activeProductSub;
     const list=state.products.filter(p=>{
       const mc=filter==='all'||p.category===filter;
-      const ms=!search||p.name.includes(search)||p.barcode?.toLowerCase().includes(search.toLowerCase());
+      const ms=!search||p.name.toLowerCase().includes(search.toLowerCase())||p.barcode?.toLowerCase().includes(search.toLowerCase());
       return mc&&ms;
     });
     const el=document.getElementById('productList');
@@ -1320,14 +1456,25 @@ const firebaseConfig = {
           <span class="badge badge-cat-${p.category}">${catLabel(p.category)}</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
-          <div class="mini-stat"><div class="mini-label">${t('cost')}</div><div>$${bUSD.toFixed(2)}</div></div>
-          <div class="mini-stat"><div class="mini-label">${t('sell')}</div><div>$${sUSD.toFixed(2)}</div></div>
-          <div class="mini-stat"><div class="mini-label">${t('profit')}</div><div style="color:${prof>=0?'var(--c-green)':'var(--c-red)'}">${prof>=0?'+':''}$${prof.toFixed(2)}</div></div>
+          <div class="mini-stat">
+            <div class="mini-label">${t('cost')}</div>
+            <div style="font-size:15px;font-weight:700;line-height:1.2">₺${(bUSD*state.rate).toFixed(0)}</div>
+            <div style="font-size:10px;color:var(--c-text3);margin-top:1px">$${bUSD.toFixed(2)}</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-label">${t('sell')}</div>
+            <div style="font-size:15px;font-weight:700;line-height:1.2">₺${(sUSD*state.rate).toFixed(0)}</div>
+            <div style="font-size:10px;color:var(--c-text3);margin-top:1px">$${sUSD.toFixed(2)}</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-label">${t('profit')}</div>
+            <div style="font-size:15px;font-weight:700;line-height:1.2;color:${prof>=0?'var(--c-green)':'var(--c-red)'}">${prof>=0?'+':''}₺${(prof*state.rate).toFixed(0)}</div>
+            <div style="font-size:10px;color:var(--c-text3);margin-top:1px">${prof>=0?'+':''}$${prof.toFixed(2)}</div>
+          </div>
           <div class="mini-stat"><div class="mini-label">${t('stock')}</div><div style="color:${low?'var(--c-red)':'inherit'};font-weight:${low?'600':'400'}">${p.qty}</div></div>
         </div>
-        <div style="font-size:11px;color:var(--c-text3);margin-bottom:8px">₺${(sUSD*state.rate).toFixed(0)} · ${t('margin')} ${pct.toFixed(0)}%</div>
+        <div style="font-size:11px;color:var(--c-text3);margin-bottom:8px">${t('margin')} ${pct.toFixed(0)}%</div>
         <div style="display:flex;gap:6px">
-          <button class="btn-sm btn-primary" onclick="openSaleModal('${p.id}')"><i class="ti ti-shopping-cart"></i> ${t('sell_btn')}</button>
           <button class="btn-sm" onclick="editProduct('${p.id}')"><i class="ti ti-edit"></i></button>
           <button class="btn-sm btn-red" onclick="deleteProduct('${p.id}')"><i class="ti ti-trash"></i></button>
         </div>
@@ -1660,15 +1807,28 @@ const firebaseConfig = {
         <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
 
-      <!-- اختيار المنتج -->
+      <!-- بحث بالاسم -->
       <div class="fg">
-        <label>المنتج</label>
-        <select id="rsProduct" onchange="updateRestockInfo()"
-          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
-          <option value="">-- اختر منتجاً --</option>
-          ${opts}
-        </select>
+        <label>ابحث عن المنتج بالاسم</label>
+        <div style="position:relative">
+          <i class="ti ti-search" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--c-text3);pointer-events:none;z-index:1"></i>
+          <input type="text" id="rsNameSearch" placeholder="مثال: جوال، سماعة، بطاقة..." autocomplete="off"
+            style="width:100%;padding:12px 36px 12px 12px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;box-sizing:border-box;transition:border-color .2s"
+            oninput="rsFilterByName(this.value)"
+            onfocus="rsFilterByName(this.value);this.style.borderColor='rgba(16,185,129,0.5)'"
+            onblur="setTimeout(function(){rsHideDropdown()},200);this.style.borderColor='var(--c-border)'"
+            onkeydown="rsHandleKey(event)">
+          <div id="rsNameDropdown"
+            style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--radius-sm);z-index:9999;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.45)">
+          </div>
+        </div>
       </div>
+
+      <!-- اختيار المنتج (مخفي — يتحدث تلقائياً) -->
+      <select id="rsProduct" onchange="updateRestockInfo()" style="display:none">
+        <option value="">-- اختر منتجاً --</option>
+        ${opts}
+      </select>
 
       <!-- باركود يدوي + كاميرا -->
       <div class="fg">
@@ -1746,7 +1906,7 @@ const firebaseConfig = {
 
       <button onclick="submitRestock()"
         style="width:100%;padding:13px;background:linear-gradient(135deg,#059669,#10B981);border:none;border-radius:var(--radius-sm);cursor:pointer;color:#fff;font-size:15px;font-family:'Cairo',sans-serif;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px">
-        <i class="ti ti-package-import"></i> تأكيد إضافة البضاعة
+        <i class="ti ti-package-import"></i> إضافة بضاعةmeyi Onayla
       </button>`, true);
   };
 
@@ -1786,7 +1946,93 @@ const firebaseConfig = {
     const p = state.products.find(x=>x.barcode&&x.barcode.toLowerCase()===barcode.toLowerCase());
     if (p) {
       const sel = document.getElementById('rsProduct');
-      if (sel) { sel.value = p.id; updateRestockInfo(); showToast('✓ تم العثور على: '+p.name,'success'); }
+      if (sel) { sel.value = p.id; updateRestockInfo(); }
+      // تحديث حقل البحث بالاسم
+      const nameInp = document.getElementById('rsNameSearch');
+      if (nameInp) nameInp.value = p.name;
+      showToast('✓ تم العثور على: '+p.name,'success');
+    }
+  };
+
+  // ======= RESTOCK NAME SEARCH =======
+  var _rsIdx = -1;
+
+  window.rsFilterByName = function(val) {
+    var dd = document.getElementById('rsNameDropdown');
+    if (!dd || !window.state) return;
+    var q = (val || '').trim().toLowerCase();
+    var products = window.state.products || [];
+    var filtered = q.length === 0
+      ? products.slice(0, 40)
+      : products.filter(function(p){ return p.name && p.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 40);
+
+    if (!filtered.length) {
+      dd.innerHTML = "<div style='padding:14px;font-size:13px;color:var(--c-text3);font-family:Cairo,sans-serif;text-align:center'>لا يوجد منتج بهالاسم</div>";
+      dd.style.display = 'block';
+      _rsIdx = -1;
+      return;
+    }
+
+    dd.innerHTML = filtered.map(function(p, i) {
+      var qty = p.qty != null ? p.qty : 0;
+      var qtyColor = qty <= 0 ? 'var(--c-red)' : qty <= 3 ? 'var(--c-amber)' : 'var(--c-green)';
+      return "<div data-idx='" + i + "' data-pid='" + p.id + "'"
+        + " onmousedown='window._rsSelect(\"" + p.id + "\")'"
+        + " onmouseover='window._rsHover(" + i + ")'"
+        + " style='display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);font-family:Cairo,sans-serif' id='rs-item-" + i + "'>"
+        + "<div style='font-size:14px;font-weight:600;color:var(--c-text)'>" + p.name + "</div>"
+        + "<div style='font-size:12px;font-weight:700;color:" + qtyColor + ";background:rgba(255,255,255,0.07);border-radius:6px;padding:3px 10px;flex-shrink:0;margin-right:8px'>" + qty + " متاح</div>"
+        + "</div>";
+    }).join('');
+    dd.style.display = 'block';
+    _rsIdx = -1;
+  };
+
+  window.rsHideDropdown = function() {
+    var dd = document.getElementById('rsNameDropdown');
+    if (dd) dd.style.display = 'none';
+    _rsIdx = -1;
+  };
+
+  window._rsHover = function(i) {
+    var dd = document.getElementById('rsNameDropdown');
+    if (!dd) return;
+    dd.querySelectorAll('[data-idx]').forEach(function(el){ el.style.background = ''; });
+    var item = dd.querySelector('[data-idx="' + i + '"]');
+    if (item) { item.style.background = 'rgba(16,185,129,0.15)'; _rsIdx = i; }
+  };
+
+  window._rsSelect = function(pid) {
+    var sel = document.getElementById('rsProduct');
+    var inp = document.getElementById('rsNameSearch');
+    if (sel) { sel.value = pid; updateRestockInfo(); }
+    var p = (window.state && window.state.products ? window.state.products : []).find(function(x){ return x.id === pid; });
+    if (inp && p) inp.value = p.name;
+    window.rsHideDropdown();
+    if (p) showToast('✓ ' + p.name, 'success');
+  };
+
+  window.rsHandleKey = function(e) {
+    var dd = document.getElementById('rsNameDropdown');
+    if (!dd || dd.style.display === 'none') return;
+    var items = dd.querySelectorAll('[data-idx]');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      _rsIdx = Math.min(_rsIdx + 1, items.length - 1);
+      items.forEach(function(el, i){ el.style.background = i === _rsIdx ? 'rgba(16,185,129,0.15)' : ''; });
+      if (items[_rsIdx]) items[_rsIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      _rsIdx = Math.max(_rsIdx - 1, 0);
+      items.forEach(function(el, i){ el.style.background = i === _rsIdx ? 'rgba(16,185,129,0.15)' : ''; });
+      if (items[_rsIdx]) items[_rsIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' && _rsIdx >= 0) {
+      e.preventDefault();
+      var item = items[_rsIdx];
+      if (item) window._rsSelect(item.getAttribute('data-pid'));
+    } else if (e.key === 'Escape') {
+      window.rsHideDropdown();
     }
   };
 
@@ -1879,18 +2125,18 @@ const firebaseConfig = {
       <div class="fg" id="custField" style="display:none"><label>اسم العميل</label><input id="sCustomer" placeholder="اسم المدين"></div>
       <div class="fg">
         <label>سعر البيع</label>
-        <div style="display:flex;gap:8px;margin-bottom:6px">
-          <div class="price-cur-badge">USD $</div>
-          <input type="number" id="sPriceUSD" placeholder="0.00" step="0.01" oninput="syncSalePrice('usd')"
-            style="flex:1;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;font-weight:600">
-        </div>
-        <div style="display:flex;gap:8px">
-          <div class="price-cur-badge">TRY ₺</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+          <div class="price-cur-badge" style="height:56px;padding:0 12px;font-size:16px">₺</div>
           <input type="number" id="sPriceTRY" placeholder="0" oninput="syncSalePrice('try')"
-            style="flex:1;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;font-weight:600">
+            style="flex:1;padding:12px 14px;border:2px solid var(--c-primary);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:28px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="price-cur-badge" style="height:38px;padding:0 10px;font-size:12px">$</div>
+          <input type="number" id="sPriceUSD" placeholder="0.00" step="0.01" oninput="syncSalePrice('usd')"
+            style="flex:1;padding:7px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text3);font-size:14px;font-family:'Cairo',sans-serif;font-weight:600;text-align:center">
         </div>
       </div>
-      <div id="saleTotalInfo" style="font-size:12px;color:var(--c-text2);margin-bottom:8px;padding:8px;background:var(--c-bg3);border-radius:8px;border:1px solid var(--c-border)"></div>
+      <div id="saleTotalInfo" style="margin-bottom:8px;padding:12px;background:var(--c-bg3);border-radius:8px;border:1px solid var(--c-border)"></div>
       <div class="fg"><label>التاريخ</label><input type="date" id="sDate" value="${new Date().toISOString().split('T')[0]}"></div>
       <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="addSale()">
         <i class="ti ti-check"></i> تأكيد البيع
@@ -1930,8 +2176,20 @@ const firebaseConfig = {
     const prof=(priceUSD-buyUSD)*qty;
     const info=document.getElementById('saleInfo');
     const totalInfo=document.getElementById('saleTotalInfo');
-    if(info) info.textContent=`تكلفة الوحدة: $${buyUSD.toFixed(2)} · السعر الافتراضي: $${sUSD.toFixed(2)} · متوفر: ${p.qty}`;
-    if(totalInfo) totalInfo.innerHTML=`إجمالي: <b>$${(priceUSD*qty).toFixed(2)}</b> · ₺${(priceUSD*qty*state.rate).toFixed(0)} · ربح: <span style="color:${prof>=0?'var(--c-green)':'var(--c-red)'}">${prof>=0?'+':''}$${prof.toFixed(2)} · ${prof>=0?'+':''}₺${Math.round(prof*state.rate)}</span>`;
+    if(info) info.innerHTML=`<span style="font-size:11px;color:var(--c-text3)">تكلفة: </span><b style="color:var(--c-text2)">₺${(buyUSD*state.rate).toFixed(0)}</b> <span style="font-size:11px;color:var(--c-text3)">($${buyUSD.toFixed(2)})</span> &nbsp;·&nbsp; <span style="font-size:11px;color:var(--c-text3)">سعر افتراضي: </span><b style="color:var(--c-text2)">₺${(sUSD*state.rate).toFixed(0)}</b> <span style="font-size:11px;color:var(--c-text3)">($${sUSD.toFixed(2)})</span> &nbsp;·&nbsp; <span style="font-size:11px;color:var(--c-text3)">متوفر: </span><b>${p.qty}</b>`;
+    if(totalInfo) totalInfo.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px">الإجمالي</div>
+          <div style="font-size:22px;font-weight:700;color:var(--c-text);line-height:1.1">₺${(priceUSD*qty*state.rate).toFixed(0)}</div>
+          <div style="font-size:11px;color:var(--c-text3)">$${(priceUSD*qty).toFixed(2)}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px">الربح</div>
+          <div style="font-size:22px;font-weight:700;color:${prof>=0?'var(--c-green)':'var(--c-red)'};line-height:1.1">${prof>=0?'+':''}₺${Math.round(prof*state.rate)}</div>
+          <div style="font-size:11px;color:var(--c-text3)">${prof>=0?'+':''}$${prof.toFixed(2)}</div>
+        </div>
+      </div>`;
   };
 
   window.openWasteModal = () => {
@@ -2092,7 +2350,7 @@ const firebaseConfig = {
       camera_lbl:'كاميرا',esc_hint:'اضغط ESC للإلغاء',scan_hint:'وجّه الكاميرا نحو الباركود',
     },
     tr:{
-      login_sub:'Mağaza Yönetim Sistemi',email_lbl:'E-posta',pass_lbl:'Şifre',
+      login_sub:'نظام إدارة المحل',email_lbl:'E-posta',pass_lbl:'Şifre',
       login_btn:'Giriş',register_btn:'Yeni Hesap Oluştur',logging_in:'Giriş yapılıyor...',
       dollar_rate:'Dolar Kuru',
       nav_dashboard:'Ana Sayfa',nav_products_sec:'Ürünler',nav_all_products:'Tüm Ürünler',
@@ -2178,15 +2436,50 @@ const firebaseConfig = {
   <div class="login-box">
     <div class="login-logo">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:-5px"><rect x="6" y="1" width="16" height="26" rx="3" stroke="currentColor" stroke-width="1.8"/><rect x="9" y="3.5" width="10" height="1.5" rx="0.75" fill="currentColor" opacity="0.4"/><circle cx="14" cy="23.5" r="1.2" fill="currentColor" opacity="0.6"/><rect x="9" y="7" width="10" height="13" rx="1.5" fill="currentColor" opacity="0.08"/><line x1="9" y1="10" x2="19" y2="10" stroke="currentColor" stroke-width="1" opacity="0.3"/><line x1="9" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1" opacity="0.3"/><line x1="9" y1="16" x2="14" y2="16" stroke="currentColor" stroke-width="1" opacity="0.3"/></svg>
-      BatLab 
+      نظام إدارة المحل - BatLab
     </div>
-    <div class="login-sub" data-i18n="login_sub">نظام إدارة المحل</div>
-    <div class="fg"><label data-i18n="email_lbl">البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@email.com"></div>
-    <div class="fg"><label data-i18n="pass_lbl">كلمة المرور</label><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <button class="btn-primary" id="loginBtn" onclick="doLogin()" style="width:100%;justify-content:center;margin-bottom:10px">
-      <i class="ti ti-login"></i> <span data-i18n="login_btn">دخول</span>
-    </button>
-   
+    <div class="login-sub" data-i18n="login_sub">نظام إدارة المحل - BatLab</div>
+
+       
+    <!-- نموذج تسجيل الدخول -->
+    <div id="loginForm">
+      <div class="fg">
+        <label data-i18n="email_lbl">البريد الإلكتروني</label>
+        <input type="email" id="loginEmail" placeholder="example@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="fg">
+        <label data-i18n="pass_lbl">كلمة المرور</label>
+        <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()" style="width:100%;justify-content:center;margin-bottom:10px">
+        <i class="ti ti-login"></i> <span data-i18n="login_btn">دخول</span>
+      </button>
+    </div>
+
+    <!-- نموذج إنشاء حساب -->
+    <div id="registerForm" style="display:none">
+      <div class="fg">
+        <label>اسم المحل</label>
+        <input type="text" id="regStoreName" placeholder="مثال: محل الهواتف" autocomplete="organization">
+      </div>
+      <div class="fg">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="regEmail" placeholder="example@email.com" autocomplete="email">
+      </div>
+      <div class="fg">
+        <label>كلمة المرور</label>
+        <input type="password" id="regPass" placeholder="••••••••  (6 أحرف على الأقل)" autocomplete="new-password">
+      </div>
+      <div class="fg">
+        <label>تأكيد كلمة المرور</label>
+        <input type="password" id="regPassConfirm" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="btn-primary" id="registerBtn" onclick="doRegister()"
+        style="width:100%;justify-content:center;margin-bottom:10px;background:linear-gradient(135deg,#059669,#10B981);border-color:#059669">
+        <i class="ti ti-user-plus"></i> إنشاء الحساب
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -2202,7 +2495,7 @@ const firebaseConfig = {
       <div class="sidebar-logo">
         <div class="logo-text">
           <svg width="20" height="20" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="1" width="16" height="26" rx="3" stroke="currentColor" stroke-width="1.8"/><rect x="9" y="3.5" width="10" height="1.5" rx="0.75" fill="currentColor" opacity="0.4"/><circle cx="14" cy="23.5" r="1.2" fill="currentColor" opacity="0.6"/><rect x="9" y="7" width="10" height="13" rx="1.5" fill="currentColor" opacity="0.08"/><line x1="9" y1="10" x2="19" y2="10" stroke="currentColor" stroke-width="1" opacity="0.3"/><line x1="9" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1" opacity="0.3"/><line x1="9" y1="16" x2="14" y2="16" stroke="currentColor" stroke-width="1" opacity="0.3"/></svg>
-          BatLab 
+          نظام إدارة المحل - BatLab
         </div>
       </div>
 
@@ -2229,10 +2522,7 @@ const firebaseConfig = {
         <button class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
           <i class="ti ti-layout-dashboard"></i> <span data-i18n="nav_dashboard">الرئيسية</span>
         </button>
-        <button class="nav-item" data-page="statslog" onclick="showPage('statslog');renderStatsLog()">
-          <i class="ti ti-chart-bar" style="color:#7C6AF7"></i> <span>سجل الاحصائيات</span>
-        </button>
-
+         
         <!-- المنتجات -->
         <div class="nav-section" data-i18n="nav_products_sec">المنتجات</div>
         <button class="nav-item" data-page="products" onclick="showPage('products')">
@@ -2273,8 +2563,8 @@ const firebaseConfig = {
         <button class="nav-item" data-page="expenses" onclick="showPage('expenses')">
           <i class="ti ti-receipt-off" style="color:var(--c-red)"></i> <span style="color:var(--c-red)">المصاريف</span>
         </button>
-        <button class="nav-item" data-page="aloans" onclick="showPage('aloans')">
-          <i class="ti ti-user-dollar" style="color:#F59E0B"></i> <span style="color:#F59E0B">الديون</span>
+        <button class="nav-item" data-page="debts" onclick="showPage('debts')" id="navDebtsBtn">
+          <i class="ti ti-clock-dollar" style="color:var(--c-amber)"></i> <span style="color:var(--c-amber)">الديون</span> <span id="debtBadge" style="margin-right:auto;font-size:11px;color:var(--c-amber)"></span>
         </button>
 
       </div>
@@ -2304,45 +2594,80 @@ const firebaseConfig = {
       <div class="topbar-mobile">
         <div class="topbar-title">
           <svg width="18" height="18" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="1" width="16" height="26" rx="3" stroke="currentColor" stroke-width="1.8"/><circle cx="14" cy="23.5" r="1.2" fill="currentColor" opacity="0.6"/></svg>
-          BatLab 
+          نظام إدارة المحل
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <button onclick="toggleTheme()" title="theme"
             style="padding:5px 8px;background:transparent;border:1px solid var(--c-border);border-radius:7px;cursor:pointer;color:var(--c-text2);font-size:14px;display:flex;align-items:center">
             <i class="ti ti-sun" id="themeIconMobile"></i>
           </button>
-           
+          
           <button class="hamburger" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
         </div>
       </div>
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-          <div style="font-size:13px;color:var(--c-text3);font-weight:600;display:flex;align-items:center;gap:6px">
-            <i class="ti ti-calendar-week" style="font-size:15px;color:var(--c-primary-bright)"></i>
-            <span id="weekLabel" style="color:var(--c-text2)">الأسبوع الحالي</span>
+
+        <!-- ===== فلاتر الفترة الزمنية ===== -->
+        <div style="margin-bottom:14px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <button id="dashBtn_today" onclick="setDashPeriod('today')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              اليوم
+            </button>
+            <button id="dashBtn_yesterday" onclick="setDashPeriod('yesterday')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              أمس
+            </button>
+            <button id="dashBtn_week" onclick="setDashPeriod('week')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              هاد الأسبوع
+            </button>
+            <button id="dashBtn_month" onclick="setDashPeriod('month')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              هاد الشهر
+            </button>
+            <button id="dashBtn_all" onclick="setDashPeriod('all')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid rgba(99,102,241,0.6);background:linear-gradient(135deg,#4F46E5,#6366F1);color:#fff;font-size:12px;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap">
+              كامل
+            </button>
+            <button id="dashBtn_custom" onclick="setDashPeriod('custom')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              <i class="ti ti-calendar" style="font-size:12px;vertical-align:-1px;margin-left:3px"></i> مخصص
+            </button>
           </div>
-          <button onclick="startNewWeek()" id="newWeekBtn"
-            style="display:flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,rgba(59,130,246,0.18),rgba(99,102,241,0.18));border:1px solid rgba(99,102,241,0.4);border-radius:10px;cursor:pointer;color:var(--c-primary-bright);font-size:13px;font-family:'Cairo',sans-serif;font-weight:700;transition:all .2s;white-space:nowrap"
-            onmouseover="this.style.background='linear-gradient(135deg,rgba(59,130,246,0.3),rgba(99,102,241,0.3))'"
-            onmouseout="this.style.background='linear-gradient(135deg,rgba(59,130,246,0.18),rgba(99,102,241,0.18))'">
-            <i class="ti ti-calendar-plus" style="font-size:16px"></i>
-            أسبوع جديد
-          </button>
+          <!-- حقول التاريخ المخصص -->
+          <div id="dashCustomRow" style="display:none;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:130px">
+              <label style="font-size:11px;color:var(--c-text3);white-space:nowrap;font-family:'Cairo',sans-serif">من:</label>
+              <input type="date" id="dashFromDate"
+                style="flex:1;padding:7px 10px;border:1px solid var(--c-border);border-radius:8px;background:var(--c-bg3);color:var(--c-text);font-size:12px;font-family:'Cairo',sans-serif;outline:none">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:130px">
+              <label style="font-size:11px;color:var(--c-text3);white-space:nowrap;font-family:'Cairo',sans-serif">إلى:</label>
+              <input type="date" id="dashToDate"
+                style="flex:1;padding:7px 10px;border:1px solid var(--c-border);border-radius:8px;background:var(--c-bg3);color:var(--c-text);font-size:12px;font-family:'Cairo',sans-serif;outline:none">
+            </div>
+            <button onclick="applyCustomDashRange()"
+              style="padding:8px 16px;background:linear-gradient(135deg,#4F46E5,#6366F1);border:none;border-radius:8px;color:#fff;font-size:12px;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap">
+              <i class="ti ti-check" style="font-size:13px;vertical-align:-2px"></i> تطبيق
+            </button>
+          </div>
         </div>
+
         <div class="metrics">
           <div class="metric-card">
             <i class="ti ti-trending-up metric-icon" style="color:#10B981"></i>
             <div class="metric-label" data-i18n="total_sales">إجمالي المبيعات</div>
-            <div class="metric-val" id="mSales">$0.00</div>
-            <div class="metric-sub" id="mSalesTry">₺0</div>
+            <div class="metric-val" id="mSalesTry">₺0</div>
+            <div class="metric-sub" id="mSales">$0.00</div>
           </div>
           <div class="metric-card">
             <i class="ti ti-coin metric-icon" style="color:#F59E0B"></i>
             <div class="metric-label" data-i18n="net_profit">صافي الربح</div>
-            <div class="metric-val" id="mProfit">$0.00</div>
-            <div class="metric-sub" id="mProfitTry">₺0</div>
+            <div class="metric-val" id="mProfitTry">₺0</div>
+            <div class="metric-sub" id="mProfit">$0.00</div>
           </div>
           <div class="metric-card">
             <i class="ti ti-shopping-bag metric-icon" style="color:#EF4444"></i>
@@ -2353,12 +2678,31 @@ const firebaseConfig = {
           <div class="metric-card">
             <i class="ti ti-box metric-icon" style="color:#7C6AF7"></i>
             <div class="metric-label" data-i18n="stock_value">قيمة المخزون</div>
-            <div class="metric-val" id="mStock">$0.00</div>
-            <div class="metric-sub" id="mStockTry">₺0</div>
+            <div class="metric-val" id="mStockTry">₺0</div>
+            <div class="metric-sub" id="mStock">$0.00</div>
           </div>
         </div>
+        <!-- زر اختصار الكاشير -->
+        <a onclick="showPage('sale')" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;margin-bottom:20px;background:linear-gradient(135deg,rgba(59,130,246,0.13),rgba(99,102,241,0.13));border:1px solid rgba(99,102,241,0.35);border-radius:14px;cursor:pointer;text-decoration:none;transition:all .2s;box-shadow:0 2px 12px rgba(99,102,241,0.1)"
+          onmouseover="this.style.background='linear-gradient(135deg,rgba(59,130,246,0.22),rgba(99,102,241,0.22))';this.style.boxShadow='0 4px 20px rgba(99,102,241,0.22)'"
+          onmouseout="this.style.background='linear-gradient(135deg,rgba(59,130,246,0.13),rgba(99,102,241,0.13))';this.style.boxShadow='0 2px 12px rgba(99,102,241,0.1)'">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:46px;height:46px;background:linear-gradient(135deg,#4F46E5,#6366F1);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(99,102,241,0.35)">
+              <i class="ti ti-shopping-cart" style="font-size:22px;color:#fff"></i>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--c-text);margin-bottom:2px">تسجيل عملية</div>
+              <div style="font-size:12px;color:var(--c-text3)">فتح صفحة البيع لتسجيل بيع جديد</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:7px 14px;flex-shrink:0">
+            <span style="font-size:13px;font-weight:700;color:var(--c-primary-bright)">فتح</span>
+            <i class="ti ti-arrow-left" style="font-size:15px;color:var(--c-primary-bright)"></i>
+          </div>
+        </a>
+
         <!-- قسمي أرباح الفاتورة والصيانة -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div class="dash-profit-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
 
           <!-- أرباح الفاتورة -->
           <div class="card" style="padding:18px">
@@ -2477,9 +2821,31 @@ const firebaseConfig = {
             </button>
           </div>
         </div>
-        <div style="position:relative;margin-bottom:12px">
-          <input type="text" id="pSearch" placeholder="بحث بالاسم أو الباركود..." data-i18n-ph="search_ph" oninput="renderProducts()" style="width:100%;padding:9px 12px 9px 36px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg2);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
-          <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--c-text3)"></i>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <div style="position:relative;flex:1">
+            <input type="text" id="pSearch" placeholder="بحث بالاسم أو الباركود..." data-i18n-ph="search_ph" oninput="renderProducts()" style="width:100%;padding:9px 12px 9px 36px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg2);color:var(--c-text);font-size:13px;font-family:Cairo,sans-serif;box-sizing:border-box">
+            <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--c-text3)"></i>
+          </div>
+          <button onclick="startProductsPageScanner()" id="productsPageCameraBtn" title="مسح باركود"
+            style="background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(99,102,241,0.2));border:1px solid rgba(59,130,246,0.4);border-radius:var(--radius-sm);padding:9px 14px;color:var(--c-primary-bright);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;font-family:Cairo,sans-serif;font-weight:700;font-size:12px">
+            <i class="ti ti-camera" style="font-size:17px"></i> كاميرا
+          </button>
+        </div>
+        <div id="productsPageScannerWrap" style="display:none;margin-bottom:12px">
+          <div style="position:relative;border-radius:var(--radius);overflow:hidden;background:#000;aspect-ratio:4/3;max-height:260px">
+            <video id="productsPageScannerVideo" style="width:100%;height:100%;object-fit:cover" playsinline></video>
+            <div style="position:absolute;inset:0;pointer-events:none">
+              <div style="position:absolute;left:10%;right:10%;top:50%;transform:translateY(-50%);height:2px;background:rgba(59,130,246,0.8);box-shadow:0 0 8px rgba(59,130,246,0.8);animation:scanLine 1.5s ease-in-out infinite"></div>
+              <div style="position:absolute;left:10%;right:10%;top:25%;bottom:25%;border:2px solid rgba(59,130,246,0.5);border-radius:8px"></div>
+            </div>
+            <button onclick="stopProductsPageScanner()"
+              style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:34px;height:34px;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+          <div id="productsPageScannerStatus" style="font-size:12px;color:var(--c-text3);text-align:center;margin-top:6px">
+            <i class="ti ti-scan"></i> وجّه الكاميرا نحو الباركود
+          </div>
         </div>
         <div id="productList"></div>
       </div>
@@ -2501,7 +2867,18 @@ const firebaseConfig = {
             </div>
           </div>
         </div>
-
+<div style="position:relative;margin-bottom:8px">
+  <i class="ti ti-search" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--c-text3);pointer-events:none;z-index:1"></i>
+  <input type="text" id="productNameSearch" placeholder="ابحث باسم المنتج..." autocomplete="off"
+    style="width:100%;padding:10px 36px 10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:Cairo,sans-serif;box-sizing:border-box"
+    oninput="filterProductsByName(this.value)"
+    onfocus="filterProductsByName(this.value)"
+    onblur="setTimeout(function(){hideProductNameDropdown()},200)"
+    onkeydown="handleProductNameKey(event)">
+  <div id="productNameDropdown"
+    style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--radius-sm);z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+  </div>
+</div>
         <!-- المنتج -->
         <div class="sale-form-card">
           <div class="sale-form-title"><i class="ti ti-box"></i> <span data-i18n="product_lbl">المنتج</span></div>
@@ -2552,16 +2929,22 @@ const firebaseConfig = {
 
         <!-- الكمية والسعر -->
         <div class="sale-form-card" id="salePriceSection">
-          <div class="form-row" style="margin-bottom:14px">
-            <div>
-              <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-123"></i> <span data-i18n="qty_lbl">الكمية</span></div>
-              <input type="number" id="quickQty" value="1" min="1" style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:16px;font-family:'Cairo',sans-serif;text-align:center" oninput="updateQuickSale()">
+          <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">
+            <!-- الكمية -->
+            <div style="flex:0 0 110px">
+              <div class="sale-form-title" style="margin-bottom:8px;font-size:14px"><i class="ti ti-123"></i> <span data-i18n="qty_lbl">الكمية</span></div>
+              <input type="number" id="quickQty" value="1" min="1"
+                style="width:100%;padding:14px 10px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:26px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box"
+                oninput="updateQuickSale()">
             </div>
-            <div>
-              <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-tag"></i> <span data-i18n="sell_price">سعر البيع</span></div>
-              <div class="price-row">
-                <div class="price-cur-badge">₺</div>
-                <input type="number" id="quickPriceTRY" style="flex:1;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;font-weight:700" placeholder="0" oninput="syncQuickPrice('try')">
+            <!-- سعر البيع -->
+            <div style="flex:1">
+              <div class="sale-form-title" style="margin-bottom:8px;font-size:14px"><i class="ti ti-tag"></i> <span data-i18n="sell_price">سعر البيع</span></div>
+              <div style="display:flex;align-items:center;gap:6px;background:rgba(99,102,241,0.08);border:2px solid rgba(99,102,241,0.45);border-radius:var(--radius-sm);padding:4px 10px">
+                <span style="font-size:22px;font-weight:800;color:var(--c-primary-bright);flex-shrink:0">₺</span>
+                <input type="number" id="quickPriceTRY"
+                  style="flex:1;border:none;outline:none;background:transparent;color:var(--c-text);font-size:34px;font-family:'Cairo',sans-serif;font-weight:800;width:100%;min-width:0;padding:8px 0"
+                  placeholder="0" oninput="syncQuickPrice('try')">
               </div>
               <input type="hidden" id="quickPriceUSD" value="">
               <div id="quickPriceWarning" style="display:none;margin-top:6px;padding:8px 10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-sm);font-size:12px;color:var(--c-red);font-weight:600"></div>
@@ -2584,13 +2967,28 @@ const firebaseConfig = {
               </div>
             </div>
             <div>
-              <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-user"></i> <span data-i18n="customer_opt">اسم الزبون (اختياري)</span></div>
-              <input type="text" id="quickCustomer" data-i18n-ph="customer_opt" style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif" placeholder="اسم الزبون">
+              <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-user"></i> <span>اسم الزبون الكامل <span style="color:var(--c-red)">*</span></span></div>
+              <input type="text" id="quickCustomer" style="width:100%;padding:10px 12px;border:1.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif" placeholder="اسم الزبون الكامل (مطلوب)">
             </div>
           </div>
 
-          <!-- طريقة الدفع: نقدي فقط -->
-          <input type="hidden" id="quickPayType" value="cash">
+          <!-- طريقة الدفع: نقدي / دين -->
+          <div style="margin-bottom:14px">
+            <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-credit-card"></i> <span>نوع الدفع</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div id="payBtn-cash" onclick="selectQuickPayType('cash')"
+                style="cursor:pointer;padding:12px 10px;border-radius:var(--radius-sm);border:2px solid var(--c-green);background:rgba(16,185,129,0.15);text-align:center;transition:all .2s">
+                <i class="ti ti-cash" style="font-size:20px;color:var(--c-green);display:block;margin-bottom:4px"></i>
+                <div style="font-size:13px;font-weight:700;color:var(--c-green)">نقداً</div>
+              </div>
+              <div id="payBtn-debt" onclick="selectQuickPayType('debt')"
+                style="cursor:pointer;padding:12px 10px;border-radius:var(--radius-sm);border:2px solid var(--c-border);background:var(--c-bg3);text-align:center;transition:all .2s">
+                <i class="ti ti-clock-dollar" style="font-size:20px;color:var(--c-text3);display:block;margin-bottom:4px"></i>
+                <div style="font-size:13px;font-weight:700;color:var(--c-text3)">دين</div>
+              </div>
+            </div>
+            <input type="hidden" id="quickPayType" value="cash">
+          </div>
 
           <!-- ملاحظات -->
           <div class="fg" style="margin-bottom:14px">
@@ -2695,51 +3093,18 @@ const firebaseConfig = {
       </div>
 
 
-      <!-- LOANS PAGE -->
-      <div class="page" id="page-aloans">
+      <!-- DEBTS PAGE -->
+      <div class="page" id="page-debts">
         <div class="page-header">
-          <div class="page-title"><i class="ti ti-user-dollar" style="font-size:18px;vertical-align:-3px;margin-left:6px;color:#F59E0B"></i>الديون</div>
-          <button class="btn-primary" style="padding:8px 14px;font-size:13px;background:linear-gradient(135deg,#F59E0B,#D97706);border-color:#D97706" onclick="openAddLoanModal()">
-            <i class="ti ti-plus"></i> دين جديد
+          <div class="page-title"><i class="ti ti-clock-dollar" style="font-size:18px;vertical-align:-3px;margin-left:6px;color:var(--c-amber)"></i><span data-i18n="debts_title">قائمة المدينين</span></div>
+          <button class="btn-primary" style="padding:8px 14px;font-size:13px;background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);color:var(--c-amber)" onclick="openDebtModal()">
+            <i class="ti ti-plus"></i> <span data-i18n="new_debt">دين جديد</span>
           </button>
         </div>
-
-        <!-- إجماليات الديون -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-          <div class="metric-card" style="min-height:auto;padding:16px 18px">
-            <i class="ti ti-wallet metric-icon" style="color:#F59E0B"></i>
-            <div class="metric-label">إجمالي الديون</div>
-            <div id="loansTotalAmt" class="metric-val" style="font-size:22px;color:#F59E0B">₺0</div>
-          </div>
-          <div class="metric-card" style="min-height:auto;padding:16px 18px">
-            <i class="ti ti-users metric-icon" style="color:#F59E0B"></i>
-            <div class="metric-label">عدد المدينين</div>
-            <div id="loansCountBadge" class="metric-val" style="font-size:22px">0</div>
-          </div>
-        </div>
-
-        <!-- سجل الديون -->
-        <div class="card" style="padding:18px">
-          <div class="section-hdr" style="margin-bottom:14px">
-            <i class="ti ti-list" style="color:var(--c-text3)"></i>
-            <span style="font-weight:700">سجل الديون</span>
-          </div>
-          <div id="loansList"></div>
-        </div>
+        <div id="debtList"></div>
       </div>
 
-      <!-- STATS LOG PAGE -->
-      <div class="page" id="page-statslog">
-        <div class="page-header">
-          <div class="page-title"><i class="ti ti-chart-bar" style="font-size:18px;vertical-align:-3px;margin-left:8px;color:#7C6AF7"></i>سجل الاحصائيات</div>
-        </div>
-        <div id="statsLogList" style="display:flex;flex-direction:column;gap:14px">
-          <div class="empty" style="padding:40px 0;text-align:center;color:var(--c-text3)">
-            <i class="ti ti-chart-bar" style="display:block;font-size:36px;opacity:.25;margin-bottom:10px"></i>
-            <p>لا توجد إحصائيات مسجلة بعد<br><span style="font-size:12px;opacity:.6">اضغط "أسبوع جديد" لحفظ إحصائيات الأسبوع</span></p>
-          </div>
-        </div>
-      </div>
+       
 
 
     </div><!-- /main-content -->
@@ -2754,7 +3119,7 @@ const firebaseConfig = {
         <span style="width:1px;height:12px;background:var(--c-border);display:inline-block"></span>
         <a href="https://wa.me/905523223191" target="_blank" rel="noopener" style="font-size:11px;color:var(--c-primary-bright);text-decoration:none;font-family:'Cairo',sans-serif;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:4px">
           <i class="ti ti-brand-whatsapp" style="font-size:13px;color:#25D366"></i>
-          +905523223191
+          05523223191
         </a>
       </div>
     </div>
@@ -2770,6 +3135,32 @@ const firebaseConfig = {
 <script>
 // Quick Sale Page Logic
 let currentSaleType = 'sell';
+
+window.selectQuickPayType = (type) => {
+  document.getElementById('quickPayType').value = type;
+  // cash button
+  const cashBtn = document.getElementById('payBtn-cash');
+  const debtBtn = document.getElementById('payBtn-debt');
+  if(type === 'cash') {
+    cashBtn.style.border = '2px solid var(--c-green)';
+    cashBtn.style.background = 'rgba(16,185,129,0.15)';
+    cashBtn.querySelector('i').style.color = 'var(--c-green)';
+    cashBtn.querySelector('div').style.color = 'var(--c-green)';
+    debtBtn.style.border = '2px solid var(--c-border)';
+    debtBtn.style.background = 'var(--c-bg3)';
+    debtBtn.querySelector('i').style.color = 'var(--c-text3)';
+    debtBtn.querySelector('div').style.color = 'var(--c-text3)';
+  } else {
+    debtBtn.style.border = '2px solid var(--c-amber)';
+    debtBtn.style.background = 'rgba(245,158,11,0.15)';
+    debtBtn.querySelector('i').style.color = 'var(--c-amber)';
+    debtBtn.querySelector('div').style.color = 'var(--c-amber)';
+    cashBtn.style.border = '2px solid var(--c-border)';
+    cashBtn.style.background = 'var(--c-bg3)';
+    cashBtn.querySelector('i').style.color = 'var(--c-text3)';
+    cashBtn.querySelector('div').style.color = 'var(--c-text3)';
+  }
+};
 
 window.selectSaleType = (type) => {
   currentSaleType = type;
@@ -2840,7 +3231,7 @@ function recalcSummary(){
     warnEl.style.display='none';
   }
 }
-
+ 
 window.toggleBarcodeInput = () => {
   const wrap = document.getElementById('barcodeInputWrap');
   const inp = document.getElementById('barcodeInput');
@@ -2989,17 +3380,13 @@ window.submitQuickSale = async () => {
       await window._addDoc(salesCol,saleData);
       const newQty = p.qty + qty;
       await window._updateDoc(window._doc(window._db,'products',pid),{qty:newQty});
-      document.getElementById('quickProduct').value='';
       document.getElementById('quickQty').value='1';
-      document.getElementById('quickPriceUSD').value='';
-      document.getElementById('quickPriceTRY').value='';
-      document.getElementById('quickCostUSD').value='';
-      document.getElementById('quickCostTRY').value='';
       document.getElementById('quickCustomer').value='';
       document.getElementById('quickNotes').value='';
-      const qtyBadge=document.getElementById('quickAvailQty');
-      if(qtyBadge) qtyBadge.style.display='none';
-      setText('qTotal','$0.00'); setText('qTotalTRY','₺0'); setText('qProfit','$0.00');
+      // ابقَ على نفس المنتج المختار وحدّث المعلومات
+      const idx2=state.products.findIndex(x=>x.id===pid);
+      if(idx2>-1) state.products[idx2].qty=newQty;
+      updateQuickSale();
       renderProducts(); renderSales(); updateDashboard();
       showToast('تم تسجيل الإعادة وزيادة المخزون ✓','success');
     }catch(e){showToast('خطأ: '+e.message,'error');}
@@ -3010,8 +3397,14 @@ window.submitQuickSale = async () => {
   const priceUSD=parseFloat(document.getElementById('quickPriceUSD')?.value)||0;
   if(!priceUSD){showToast('أدخل سعر البيع','error');return;}
   const type=document.getElementById('quickPayType')?.value||'cash';
-  const customer=document.getElementById('quickCustomer')?.value||'';
-  if(type==='debt'&&!customer){showToast('أدخل اسم العميل للدين','error');return;}
+  const customer=(document.getElementById('quickCustomer')?.value||'').trim();
+  // اسم الزبون إجباري فقط عند الدين
+  if(type==='debt' && !customer){
+    showToast('أدخل اسم الزبون الكامل','error');
+    document.getElementById('quickCustomer').style.borderColor='var(--c-red)';
+    setTimeout(()=>{document.getElementById('quickCustomer').style.borderColor='';},2000);
+    return;
+  }
   const buyUSD=p.currency==='usd'?p.buyPrice:p.buyPrice/state.rate;
   // profit check
   if(priceUSD<=buyUSD){
@@ -3027,17 +3420,18 @@ window.submitQuickSale = async () => {
     const salesCol=window._collection(window._db,'sales');
     await window._addDoc(salesCol,saleData);
     await window._updateDoc(window._doc(window._db,'products',pid),{qty:p.qty-qty});
-    document.getElementById('quickProduct').value='';
+    // حدّث الكمية في الـ state المحلي
+    const pIdx=state.products.findIndex(x=>x.id===pid);
+    if(pIdx>-1) state.products[pIdx].qty=p.qty-qty;
     document.getElementById('quickQty').value='1';
-    document.getElementById('quickPriceUSD').value='';
-    document.getElementById('quickPriceTRY').value='';
-    document.getElementById('quickCostUSD').value='';
-    document.getElementById('quickCostTRY').value='';
     document.getElementById('quickCustomer').value='';
     document.getElementById('quickNotes').value='';
+    // ابقَ على نفس المنتج المختار وحدّث السعر والمخزون
+    updateQuickSale();
+    // إعادة ضبط نوع الدفع لنقدي
+    selectQuickPayType('cash');
     const warnEl2=document.getElementById('quickPriceWarning');
     if(warnEl2) warnEl2.style.display='none';
-    setText('qTotal','$0.00'); setText('qTotalTRY','₺0'); setText('qProfit','$0.00');
     renderProducts(); renderSales(); renderDebts(); updateDashboard();
     showToast('تم تسجيل البيع','success');
   }catch(e){showToast('خطأ: '+e.message,'error');}
@@ -3283,6 +3677,134 @@ window.addExtraProfit = async (type) => {
     window.showToast('تمت إضافة الربح ✓', 'success');
   } catch (e) { window.showToast('خطأ: ' + e.message, 'error'); }
   finally { window.setBusy(false); }
+};
+
+// ======= PRODUCT NAME SEARCH =======
+var _pnsIdx = -1;
+
+window.filterProductsByName = function(val) {
+  var dd = document.getElementById("productNameDropdown");
+  if (!dd || !window.state) return;
+  var q = (val || "").trim().toLowerCase();
+  var products = window.state.products || [];
+  var filtered = q.length === 0
+    ? products.slice(0, 40)
+    : products.filter(function(p){ return p.name && p.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 40);
+
+  if (!filtered.length) {
+    dd.innerHTML = "<div style='padding:14px;font-size:13px;color:var(--c-text3);font-family:Cairo,sans-serif;text-align:center'>لا يوجد منتج بهالاسم</div>";
+    dd.style.display = "block";
+    _pnsIdx = -1;
+    return;
+  }
+
+  dd.innerHTML = filtered.map(function(p, i) {
+    var qty = p.qty != null ? p.qty : 0;
+    var qtyColor = qty <= 0 ? "var(--c-red)" : qty <= 3 ? "var(--c-amber)" : "var(--c-green)";
+    return "<div data-idx='" + i + "' data-pid='" + p.id + "'"
+      + " onmousedown='window._pnsSelect(\"" + p.id + "\")'"
+      + " onmouseover='window._pnsHover(" + i + ")'"
+      + " style='display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);font-family:Cairo,sans-serif' id='pns-" + i + "'>"
+      + "<div style='font-size:13px;font-weight:600;color:var(--c-text)'>" + p.name + "</div>"
+      + "<div style='font-size:11px;font-weight:700;color:" + qtyColor + ";background:rgba(255,255,255,0.06);border-radius:5px;padding:2px 8px;flex-shrink:0;margin-right:8px'>" + qty + " متاح</div>"
+      + "</div>";
+  }).join("");
+  dd.style.display = "block";
+  _pnsIdx = -1;
+};
+
+window.hideProductNameDropdown = function() {
+  var dd = document.getElementById("productNameDropdown");
+  if (dd) dd.style.display = "none";
+  _pnsIdx = -1;
+};
+
+window._pnsHover = function(i) {
+  var dd = document.getElementById("productNameDropdown");
+  if (!dd) return;
+  dd.querySelectorAll("[data-idx]").forEach(function(el){ el.style.background = ""; });
+  var item = dd.querySelector("[data-idx='" + i + "']");
+  if (item) { item.style.background = "rgba(99,102,241,0.18)"; _pnsIdx = i; }
+};
+
+window._pnsSelect = function(pid) {
+  var sel = document.getElementById("quickProduct");
+  var inp = document.getElementById("productNameSearch");
+  if (sel) { sel.value = pid; updateQuickSale(); }
+  var p = (window.state && window.state.products ? window.state.products : []).find(function(x){ return x.id === pid; });
+  if (inp && p) inp.value = p.name;
+  window.hideProductNameDropdown();
+  if (p) showToast("\u2713 " + p.name, "success");
+};
+
+window.handleProductNameKey = function(e) {
+  var dd = document.getElementById("productNameDropdown");
+  if (!dd || dd.style.display === "none") return;
+  var items = dd.querySelectorAll("[data-idx]");
+  if (!items.length) return;
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    _pnsIdx = Math.min(_pnsIdx + 1, items.length - 1);
+    items.forEach(function(el, i){ el.style.background = i === _pnsIdx ? "rgba(99,102,241,0.18)" : ""; });
+    if (items[_pnsIdx]) items[_pnsIdx].scrollIntoView({block:"nearest"});
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    _pnsIdx = Math.max(_pnsIdx - 1, 0);
+    items.forEach(function(el, i){ el.style.background = i === _pnsIdx ? "rgba(99,102,241,0.18)" : ""; });
+    if (items[_pnsIdx]) items[_pnsIdx].scrollIntoView({block:"nearest"});
+  } else if (e.key === "Enter" && _pnsIdx >= 0) {
+    e.preventDefault();
+    var item = items[_pnsIdx];
+    if (item) window._pnsSelect(item.getAttribute("data-pid"));
+  } else if (e.key === "Escape") {
+    window.hideProductNameDropdown();
+  }
+};
+
+// ======= PRODUCTS PAGE CAMERA SCANNER =======
+let _ppZxing = null;
+
+window.startProductsPageScanner = async () => {
+  const wrap = document.getElementById("productsPageScannerWrap");
+  const status = document.getElementById("productsPageScannerStatus");
+  const video = document.getElementById("productsPageScannerVideo");
+  if (!wrap) return;
+  wrap.style.display = "block";
+  if (typeof ZXing === "undefined") {
+    if (status) status.innerHTML = "<span style='color:var(--c-red)'>⚠ مكتبة القراءة لم تُحمَّل</span>";
+    return;
+  }
+  try {
+    _ppZxing = new ZXing.BrowserMultiFormatReader();
+    if (status) status.innerHTML = "<i class='ti ti-scan'></i> وجّه الكاميرا نحو الباركود";
+    await _ppZxing.decodeFromConstraints(
+      { video: { facingMode: "environment" } },
+      video,
+      function(result, err) {
+        if (result) {
+          const code = result.getText();
+          stopProductsPageScanner();
+          const inp = document.getElementById("pSearch");
+          if (inp) { inp.value = code; renderProducts(); }
+          // Check if found
+          const found = (window.state && window.state.products ? window.state.products : [])
+            .find(function(p){ return p.barcode && p.barcode.toLowerCase() === code.toLowerCase(); });
+          if (found) showToast("✓ " + found.name, "success");
+          else showToast("باركود: " + code, "error");
+        }
+      }
+    );
+  } catch(e) {
+    if (status) status.innerHTML = "<span style='color:var(--c-red)'>⚠ تعذّر الوصول للكاميرا</span>";
+  }
+};
+
+window.stopProductsPageScanner = () => {
+  if (_ppZxing) { try { _ppZxing.reset(); } catch(e){} _ppZxing = null; }
+  const wrap = document.getElementById("productsPageScannerWrap");
+  if (wrap) wrap.style.display = "none";
+  const video = document.getElementById("productsPageScannerVideo");
+  if (video && video.srcObject) { video.srcObject.getTracks().forEach(function(t){ t.stop(); }); video.srcObject = null; }
 };
 </script>
 

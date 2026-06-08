@@ -280,7 +280,7 @@ const firebaseConfig = {
   window._doc = doc;
 
   // ======= LOCAL PIN =======
-  const LOCAL_PIN = '113355';
+  let _userLocalPin = '';
 
   function showPinScreen() {
     document.getElementById('loginScreen').style.display = 'none';
@@ -323,7 +323,7 @@ const firebaseConfig = {
 
   window._submitPin = () => {
     const val = (document.getElementById('pinInput')?.value || '').trim();
-    if (val === LOCAL_PIN) {
+    if (val === _userLocalPin) {
       document.getElementById('pinScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'flex';
       document.getElementById('userEmail').textContent = auth.currentUser?.email || '';
@@ -355,6 +355,8 @@ const firebaseConfig = {
         const userSnap = await getDocs(query(collection(db, 'users'), where('uid', '==', user.uid)));
         if (!userSnap.empty) {
           const userData = userSnap.docs[0].data();
+          // جلب الـ PIN من حساب المستخدم
+          _userLocalPin = userData.localPin || '';
           const now = new Date();
           const expiresAt = new Date(userData.expiresAt);
           if (now > expiresAt || userData.subscriptionStatus !== 'active') {
@@ -702,7 +704,10 @@ const firebaseConfig = {
     activePage: 'dashboard', activeProductSub: 'all',
     weekStartDate: null,   // تاريخ بداية الأسبوع الحالي
     salesOffset: 0,        // مجموع مبيعات الأسابيع السابقة
-    costOffset: 0          // مجموع تكاليف الأسابيع السابقة
+    costOffset: 0,         // مجموع تكاليف الأسابيع السابقة
+    dashPeriod: 'all',     // فلتر الداشبورد: all | today | yesterday | week | month | custom
+    dashFrom: '',          // من تاريخ (للفلتر المخصص)
+    dashTo: ''             // إلى تاريخ (للفلتر المخصص)
   };
   // local alias
   const state = window.state;
@@ -994,7 +999,7 @@ const firebaseConfig = {
     const pid=val('wProduct'), qty=parseInt(val('wQty'));
     const p=state.products.find(x=>x.id===pid);
     if(!p) return;
-    if(qty>p.qty){showToast('الكمية المتاحة: '+p.qty,'error');return;}
+    if(qty>p.qty){showToast('الكم �ة المتاحة: '+p.qty,'error');return;}
     const buyUSD=p.currency==='usd'?p.buyPrice:p.buyPrice/state.rate;
     const data={productId:pid,productName:p.name,qty,type:val('wType'),reason:val('wReason')||'غير محدد',
       date:val('wDate')||new Date().toISOString().split('T')[0],valueUSD:buyUSD*qty,createdAt:new Date().toISOString(),userId:auth.currentUser.uid};
@@ -1286,42 +1291,110 @@ const firebaseConfig = {
   };
 
   // ======= RENDER =======
+  // ======= DASH PERIOD FILTER =======
+  window.setDashPeriod = (period) => {
+    window.state.dashPeriod = period;
+    const customRow = document.getElementById('dashCustomRow');
+    if (customRow) customRow.style.display = period === 'custom' ? 'flex' : 'none';
+    // تحديث أزرار الفلتر
+    ['all','today','yesterday','week','month','custom'].forEach(p => {
+      const btn = document.getElementById('dashBtn_'+p);
+      if (btn) {
+        const active = p === period;
+        btn.style.background = active ? 'linear-gradient(135deg,#4F46E5,#6366F1)' : 'var(--c-bg3)';
+        btn.style.color = active ? '#fff' : 'var(--c-text2)';
+        btn.style.borderColor = active ? 'rgba(99,102,241,0.6)' : 'var(--c-border)';
+        btn.style.fontWeight = active ? '700' : '500';
+      }
+    });
+    if (period !== 'custom') updateDashboard();
+  };
+
+  window.applyCustomDashRange = () => {
+    const from = (document.getElementById('dashFromDate')||{}).value || '';
+    const to   = (document.getElementById('dashToDate')||{}).value || '';
+    if (!from && !to) { showToast('اختر تاريخاً على الأقل','error'); return; }
+    window.state.dashFrom = from;
+    window.state.dashTo   = to;
+    updateDashboard();
+  };
+
   window.updateDashboard = () => {
     const wsd = window.state.weekStartDate;
-    // المبيعات تحسب من كل السجل ثم نطرح الـ offset (مبيعات الأسابيع السابقة)
-    const allSalesAll = state.sales;
-    const allExtraProfits = (state.extraProfits||[]);
-    // المصاريف مفلترة بالأسبوع (تتصفر فعلياً بالحذف، الفلتر احتياطي)
-    const allExpenses = (state.expenses||[]);
+    const period = window.state.dashPeriod || 'all';
+    const today = new Date().toISOString().split('T')[0];
+
+    // حساب نطاق التاريخ حسب الفلتر المختار
+    let filterFrom = null, filterTo = null;
+    if (period === 'today') {
+      filterFrom = filterTo = today;
+    } else if (period === 'yesterday') {
+      const y = new Date(); y.setDate(y.getDate() - 1);
+      filterFrom = filterTo = y.toISOString().split('T')[0];
+    } else if (period === 'week') {
+      const d = new Date();
+      const day = d.getDay(); // 0=Sun
+      d.setDate(d.getDate() - ((day + 6) % 7)); // بداية الأسبوع الاثنين
+      filterFrom = d.toISOString().split('T')[0];
+      filterTo = today;
+    } else if (period === 'month') {
+      const d = new Date(); d.setDate(1);
+      filterFrom = d.toISOString().split('T')[0];
+      filterTo = today;
+    } else if (period === 'custom') {
+      filterFrom = window.state.dashFrom || null;
+      filterTo   = window.state.dashTo   || null;
+    }
+
+    // فلترة المبيعات والمصاريف حسب الفترة
+    const inRange = (dateStr) => {
+      if (!dateStr) return period === 'all';
+      if (filterFrom && dateStr < filterFrom) return false;
+      if (filterTo   && dateStr > filterTo)   return false;
+      return true;
+    };
+
+    const filteredSales    = period === 'all' ? state.sales : state.sales.filter(s => inRange(s.date||''));
+    const filteredExpenses = period === 'all' ? (state.expenses||[]) : (state.expenses||[]).filter(e => inRange(e.date||''));
+    const filteredEP       = period === 'all' ? (state.extraProfits||[]) : (state.extraProfits||[]).filter(p => {
+      const d = p.date || (p.createdAt||'').split('T')[0] || '';
+      return inRange(d);
+    });
+
+    const allSalesAll = filteredSales;
+    const allExtraProfits = filteredEP;
+    const allExpenses = filteredExpenses;
     // للرسم البياني وآخر العمليات
-    const allSales = wsd ? state.sales.filter(s => (s.date||'') >= wsd) : state.sales;
+    const allSales = period === 'all'
+      ? (wsd ? state.sales.filter(s => (s.date||'') >= wsd) : state.sales)
+      : filteredSales;
 
     const allSells  = allSalesAll.filter(s=>s.type!=='partial'&&s.type!=='return');
     const allReturns= allSalesAll.filter(s=>s.type==='return');
     const grossSales= allSells.reduce((s,x)=>s+x.price*x.qty,0) - allReturns.reduce((s,x)=>s+x.price*x.qty,0);
     const grossCost = allSells.reduce((s,x)=>s+(x.cost||0)*x.qty,0) - allReturns.reduce((s,x)=>s+(x.cost||0)*x.qty,0);
-    // نطرح مبيعات وتكاليف الأسابيع السابقة
-    const totalSales = grossSales - (state.salesOffset||0);
-    const totalCost  = grossCost  - (state.costOffset ||0);
+    // نطرح offset الأسابيع السابقة فقط في وضع "كامل"
+    const totalSales = period === 'all' ? grossSales - (state.salesOffset||0) : grossSales;
+    const totalCost  = period === 'all' ? grossCost  - (state.costOffset ||0) : grossCost;
     const salesProfit=totalSales-totalCost;
     const invoiceProfitExtra=allExtraProfits.filter(p=>p.type==='invoice').reduce((s,p)=>s+(p.amount||0),0);
     const maintenanceProfitExtra=allExtraProfits.filter(p=>p.type==='maintenance').reduce((s,p)=>s+(p.amount||0),0);
     const totalExpensesTRY=allExpenses.reduce((s,e)=>s+(e.amountTRY||0),0);
     const totalExpensesUSD=totalExpensesTRY/state.rate;
     const profit=salesProfit+invoiceProfitExtra+maintenanceProfitExtra-totalExpensesUSD;
+    // قيمة المخزون لا تتأثر بالفلتر أبداً
     const stock=state.products.reduce((s,p)=>{const v=p.currency==='usd'?p.buyPrice:p.buyPrice/state.rate;return s+v*p.qty;},0);
-    // الديون تحسب من كل السجل مش من الأسبوع فقط
+    // الديون تحسب من كل السجل دائماً
     const totalDebt=state.sales.filter(s=>s.type==='debt').reduce((s,x)=>s+x.price*x.qty,0);
     const totalPartial=state.sales.filter(s=>s.type==='partial').reduce((s,x)=>s+x.price,0);
     const debt=Math.max(0,totalDebt-totalPartial);
-    const today=new Date().toISOString().split('T')[0];
     const todayExpensesTRY=(state.expenses||[]).filter(e=>e.date===today).reduce((s,e)=>s+(e.amountTRY||0),0);
     setText('mSalesTry','₺'+(totalSales*state.rate).toFixed(0)); setText('mSales','$'+totalSales.toFixed(2));
     setText('mProfitTry','₺'+(profit*state.rate).toFixed(0)); setText('mProfit','$'+profit.toFixed(2));
     setText('mStockTry','₺'+(stock*state.rate).toFixed(0)); setText('mStock','$'+stock.toFixed(2));
     setText('mDebt','$'+debt.toFixed(2)); setText('mDebtTry','₺'+(debt*state.rate).toFixed(0));
     setText('mExpenses','₺'+totalExpensesTRY.toFixed(0));
-    setText('mTodayExpenses','اليوم: ₺'+todayExpensesTRY.toFixed(0));
+    setText('mTodayExpenses', period === 'all' ? 'اليوم: ₺'+todayExpensesTRY.toFixed(0) : '');
     setText('invoiceProfitTotal','₺'+(invoiceProfitExtra*state.rate).toFixed(0));
     setText('invoiceProfitTotalTry','');
     setText('maintenanceProfitTotal','₺'+(maintenanceProfitExtra*state.rate).toFixed(0));
@@ -2535,13 +2608,54 @@ const firebaseConfig = {
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-          <div style="font-size:13px;color:var(--c-text3);font-weight:600;display:flex;align-items:center;gap:6px">
-            <i class="ti ti-calendar-week" style="font-size:15px;color:var(--c-primary-bright)"></i>
-            <span id="weekLabel" style="color:var(--c-text2)">الأسبوع الحالي</span>
+
+        <!-- ===== فلاتر الفترة الزمنية ===== -->
+        <div style="margin-bottom:14px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <button id="dashBtn_today" onclick="setDashPeriod('today')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              اليوم
+            </button>
+            <button id="dashBtn_yesterday" onclick="setDashPeriod('yesterday')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              أمس
+            </button>
+            <button id="dashBtn_week" onclick="setDashPeriod('week')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              هاد الأسبوع
+            </button>
+            <button id="dashBtn_month" onclick="setDashPeriod('month')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              هاد الشهر
+            </button>
+            <button id="dashBtn_all" onclick="setDashPeriod('all')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid rgba(99,102,241,0.6);background:linear-gradient(135deg,#4F46E5,#6366F1);color:#fff;font-size:12px;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap">
+              كامل
+            </button>
+            <button id="dashBtn_custom" onclick="setDashPeriod('custom')"
+              style="padding:7px 13px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-bg3);color:var(--c-text2);font-size:12px;font-family:'Cairo',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap">
+              <i class="ti ti-calendar" style="font-size:12px;vertical-align:-1px;margin-left:3px"></i> مخصص
+            </button>
           </div>
-          
+          <!-- حقول التاريخ المخصص -->
+          <div id="dashCustomRow" style="display:none;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:130px">
+              <label style="font-size:11px;color:var(--c-text3);white-space:nowrap;font-family:'Cairo',sans-serif">من:</label>
+              <input type="date" id="dashFromDate"
+                style="flex:1;padding:7px 10px;border:1px solid var(--c-border);border-radius:8px;background:var(--c-bg3);color:var(--c-text);font-size:12px;font-family:'Cairo',sans-serif;outline:none">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:130px">
+              <label style="font-size:11px;color:var(--c-text3);white-space:nowrap;font-family:'Cairo',sans-serif">إلى:</label>
+              <input type="date" id="dashToDate"
+                style="flex:1;padding:7px 10px;border:1px solid var(--c-border);border-radius:8px;background:var(--c-bg3);color:var(--c-text);font-size:12px;font-family:'Cairo',sans-serif;outline:none">
+            </div>
+            <button onclick="applyCustomDashRange()"
+              style="padding:8px 16px;background:linear-gradient(135deg,#4F46E5,#6366F1);border:none;border-radius:8px;color:#fff;font-size:12px;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap">
+              <i class="ti ti-check" style="font-size:13px;vertical-align:-2px"></i> تطبيق
+            </button>
+          </div>
         </div>
+
         <div class="metrics">
           <div class="metric-card">
             <i class="ti ti-trending-up metric-icon" style="color:#10B981"></i>

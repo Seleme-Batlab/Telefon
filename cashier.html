@@ -51,15 +51,63 @@
     activePage: 'sale'
   };
 
+  // ======= SUBSCRIPTION EXPIRED SCREEN =======
+  window.showSubscriptionExpired = (storeName) => {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'none';
+    let el = document.getElementById('expiredScreen');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'expiredScreen';
+      el.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px;font-family:Cairo,sans-serif';
+      el.innerHTML = `
+        <div style="text-align:center;max-width:360px;width:100%">
+          <div style="width:80px;height:80px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+            <i class="ti ti-lock" style="font-size:36px;color:#f87171"></i>
+          </div>
+          <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:10px">انتهى الاشتراك</div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:28px;line-height:1.7">
+            ${storeName ? `<b style="color:#f87171">${storeName}</b><br>` : ''}
+            لتجديد الاشتراك وإعادة الوصول للنظام<br>يرجى التواصل مع الدعم الفني
+          </div>
+          <a href="https://wa.me/905523223191" target="_blank" rel="noopener"
+            style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(34,197,94,0.15);border:1.5px solid rgba(34,197,94,0.4);border-radius:14px;padding:16px 24px;text-decoration:none;color:#4ade80;font-size:16px;font-weight:800;margin-bottom:14px">
+            <i class="ti ti-phone" style="font-size:22px"></i>0-552-322-3191
+          </a>
+          <button onclick="(()=>{const a=window._auth;if(a)a.signOut();})()"
+            style="width:100%;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:rgba(255,255,255,0.6);font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer">
+            <i class="ti ti-logout"></i> تسجيل الخروج
+          </button>
+        </div>`;
+      document.body.appendChild(el);
+    } else {
+      el.style.display = 'flex';
+    }
+  };
+
   // ======= AUTH =======
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
+      try {
+        const userSnap = await getDocs(query(collection(db, 'users'), where('uid', '==', user.uid)));
+        if (!userSnap.empty) {
+          const userData = userSnap.docs[0].data();
+          const now = new Date();
+          const expiresAt = new Date(userData.expiresAt);
+          if (now > expiresAt || userData.subscriptionStatus !== 'active') {
+            showSubscriptionExpired(userData.storeName || '');
+            return;
+          }
+        }
+      } catch(e) {}
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'flex';
       document.getElementById('userEmail').textContent = user.email;
       loadAllData();
       fetchRate();
     } else {
+      const expiredScreen = document.getElementById('expiredScreen');
+      if (expiredScreen) expiredScreen.style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('appScreen').style.display = 'none';
     }
@@ -453,7 +501,7 @@
   <div class="cashier-topbar">
     <div class="cashier-logo" style="gap:10px">
       <img src="logo website.png" alt="BatLab" style="width:36px;height:36px;border-radius:10px;object-fit:contain">
-      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px"> seleme web  </span>
+      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px"> BatLab  </span>
     </div>
 
     <!-- التبويبين الرئيسيين -->
@@ -722,7 +770,7 @@
         <span style="font-size:11px;color:var(--c-text2);font-family:'Cairo',sans-serif;font-weight:600">مصطفى سلامة</span>
         <span style="width:1px;height:12px;background:var(--c-border);display:inline-block"></span>
         <a href="https://wa.me/905523223191" target="_blank" rel="noopener" style="font-size:11px;color:var(--c-primary-bright);text-decoration:none;font-family:'Cairo',sans-serif;font-weight:600;display:flex;align-items:center;gap:4px">
-          <i class="ti ti-brand-whatsapp" style="font-size:13px;color:#25D366"></i>+905523223191
+          <i class="ti ti-brand-whatsapp" style="font-size:13px;color:#25D366"></i>05523223191
         </a>
       </div>
     </div>

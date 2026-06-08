@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr" dir="ltr">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kasiyer —</title>
+<title>Kasiyer — BatLab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -51,15 +51,63 @@
     activePage: 'sale'
   };
 
+  // ======= SUBSCRIPTION EXPIRED SCREEN =======
+  window.showSubscriptionExpired = (storeName) => {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'none';
+    let el = document.getElementById('expiredScreen');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'expiredScreen';
+      el.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px;font-family:Cairo,sans-serif';
+      el.innerHTML = `
+        <div style="text-align:center;max-width:360px;width:100%">
+          <div style="width:80px;height:80px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+            <i class="ti ti-lock" style="font-size:36px;color:#f87171"></i>
+          </div>
+          <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:10px">Abonelik Sona Erdi</div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:28px;line-height:1.7">
+            ${storeName ? `<b style="color:#f87171">${storeName}</b><br>` : ''}
+            Aboneliği yenilemek ve sisteme tekrar erişmek için<br>lütfen teknik destek ile iletişime geçin
+          </div>
+          <a href="https://wa.me/905523223191" target="_blank" rel="noopener"
+            style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(34,197,94,0.15);border:1.5px solid rgba(34,197,94,0.4);border-radius:14px;padding:16px 24px;text-decoration:none;color:#4ade80;font-size:16px;font-weight:800;margin-bottom:14px">
+            <i class="ti ti-phone" style="font-size:22px"></i>0-552-322-3191
+          </a>
+          <button onclick="(()=>{const a=window._auth;if(a)a.signOut();})()"
+            style="width:100%;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:rgba(255,255,255,0.6);font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer">
+            <i class="ti ti-logout"></i> Çıkış Yap
+          </button>
+        </div>`;
+      document.body.appendChild(el);
+    } else {
+      el.style.display = 'flex';
+    }
+  };
+
   // ======= AUTH =======
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
+      try {
+        const userSnap = await getDocs(query(collection(db, 'users'), where('uid', '==', user.uid)));
+        if (!userSnap.empty) {
+          const userData = userSnap.docs[0].data();
+          const now = new Date();
+          const expiresAt = new Date(userData.expiresAt);
+          if (now > expiresAt || userData.subscriptionStatus !== 'active') {
+            showSubscriptionExpired(userData.storeName || '');
+            return;
+          }
+        }
+      } catch(e) {}
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'flex';
       document.getElementById('userEmail').textContent = user.email;
       loadAllData();
       fetchRate();
     } else {
+      const expiredScreen = document.getElementById('expiredScreen');
+      if (expiredScreen) expiredScreen.style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('appScreen').style.display = 'none';
     }
@@ -90,7 +138,7 @@
     if(!el) return;
     el.innerHTML = on
       ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:3px 10px"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;animation:livePulse 1.4s ease-in-out infinite"></span>Canlı</span>`
-      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:20px;padding:3px 10px"><span style="width:7px;height:7px;border-radius:50%;background:var(--c-text3);display:inline-block"></span>Bağlı değil</span>`;
+      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:20px;padding:3px 10px"><span style="width:7px;height:7px;border-radius:50%;background:var(--c-text3);display:inline-block"></span>Bağlantısız</span>`;
   }
 
   function subscribeRealtime() {
@@ -98,7 +146,6 @@
     showLoading(true);
     setLiveIndicator(false);
 
-    // --- products listener ---
     if(_unsubProducts) _unsubProducts();
     _unsubProducts = onSnapshot(
       query(collection(db,'products'), where('userId','==',uid)),
@@ -106,7 +153,6 @@
         window.state.products = snap.docs.map(d=>({id:d.id,...d.data()}))
           .sort((a,b)=> (b.createdAt||'') > (a.createdAt||'') ? 1 : -1);
         populateDropdown();
-        // Ürün seçiliyse mevcut miktar rozetini yenile
         const pid = document.getElementById('quickProduct')?.value;
         if(pid) updateQuickSale();
         showLoading(false);
@@ -115,7 +161,6 @@
       (err) => { showToast('Ürün hatası: '+err.message,'error'); showLoading(false); setLiveIndicator(false); }
     );
 
-    // --- sales listener ---
     if(_unsubSales) _unsubSales();
     _unsubSales = onSnapshot(
       query(collection(db,'sales'), where('userId','==',uid)),
@@ -128,7 +173,6 @@
     );
   }
 
-  // loadAllData çağıran eski kodlar için uyumluluk
   async function loadAllData() { subscribeRealtime(); }
 
   function populateDropdown() {
@@ -161,19 +205,19 @@
 
   // ======= SUBMIT SALE =======
   window.submitQuickSale = async () => {
-    if(window._busy){showToast('İşlem devam ediyor, lütfen bekleyin...','error');return;}
+    if(window._busy){showToast('Bir işlem devam ediyor, lütfen bekleyin...','error');return;}
     const st = window.state;
     const pid = document.getElementById('quickProduct')?.value;
     const p   = st.products.find(x=>x.id===pid);
-    if(!p){showToast('Ürün seçin','error');return;}
+    if(!p){showToast('Lütfen ürün seçin','error');return;}
     const qty = parseInt(document.getElementById('quickQty')?.value)||1;
-    if(qty > p.qty){showToast('Mevcut miktar: '+p.qty,'error');return;}
+    if(qty > p.qty){showToast('Mevcut stok: '+p.qty,'error');return;}
     const priceUSD = parseFloat(document.getElementById('quickPriceUSD')?.value)||0;
     if(!priceUSD){showToast('Satış fiyatı girin','error');return;}
     const buyUSD = p.currency==='usd' ? p.buyPrice : p.buyPrice/st.rate;
     if(priceUSD <= buyUSD){
       const diff = ((buyUSD-priceUSD)*st.rate).toFixed(0);
-      showToast(`⚠️ Satış fiyatı maliyetten ₺ düşük${diff}!`,'error');
+      showToast(`⚠️ Satış fiyatı maliyetten ₺${diff} düşük!`,'error');
       return;
     }
     const customer = document.getElementById('quickCustomer')?.value||'';
@@ -188,11 +232,9 @@
     try {
       const salesCol = collection(db,'sales');
       await addDoc(salesCol, saleData);
-      // Manuel ekleme yok — onSnapshot otomatik günceller
       await updateDoc(doc(db,'products',pid),{qty:p.qty-qty});
       const idx = st.products.findIndex(x=>x.id===pid);
       st.products[idx].qty -= qty;
-      // Formu sıfırla
       document.getElementById('quickProduct').value = '';
       document.getElementById('quickQty').value = '1';
       document.getElementById('quickPriceTRY').value = '';
@@ -232,7 +274,6 @@
           window.state.products[pIdx].qty = newQty;
         }
       }
-      // Manuel silme yok — onSnapshot otomatik günceller
       populateDropdown();
       showToast('İşlem silindi ✓','success');
     } catch(e){showToast('Hata: '+e.message,'error');}
@@ -276,7 +317,6 @@
     setBusy(true,'Kaydediliyor...');
     try {
       await updateDoc(doc(db,'sales',saleId),{productName,qty,price,date,customer});
-      // Manuel güncelleme yok — onSnapshot otomatik günceller
       closeModal();
       showToast('Düzenlendi ✓','success');
     } catch(e){showToast('Hata: '+e.message,'error');}
@@ -290,7 +330,7 @@
     const list   = st.sales.filter(s=>filter==='all'||s.type===filter);
     const el     = document.getElementById('salesList');
     if(!el) return;
-    const typeLabelMap = {cash:'Nakit',debt:'Borç',partial:'Taksit',return:'İade',waste:'Fire'};
+    const typeLabelMap = {cash:'Nakit',debt:'Veresiye',partial:'Taksit',return:'İade',waste:'Fire'};
     const typeBadgeMap = {cash:'badge-g',debt:'badge-a',partial:'badge-b',return:'badge-p',waste:'badge-r'};
     const typeIconMap  = {cash:'ti-cash',debt:'ti-clock-dollar',partial:'ti-coin',return:'ti-arrow-back-up',waste:'ti-trash'};
     el.innerHTML = list.length ? list.map(s=>{
@@ -319,14 +359,13 @@
         </div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
           <div style="background:var(--c-bg3);border-radius:var(--radius-sm);padding:8px;text-align:center;border:1px solid var(--c-border)">
-            <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">Miktar</div>
+            <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">MİKTAR</div>
             <div style="font-size:15px;font-weight:700">${s.qty}</div>
           </div>
           <div style="background:var(--c-bg3);border-radius:var(--radius-sm);padding:8px;text-align:center;border:1px solid var(--c-border)">
-            <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">Tarih</div>
+            <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">TARİH</div>
             <div style="font-size:13px;font-weight:600">${s.date||'—'}</div>
           </div>
-          
         </div>
         ${s.customer?`<div style="margin-top:10px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--c-text2);background:rgba(59,130,246,0.08);padding:6px 10px;border-radius:var(--radius-sm);border:1px solid rgba(59,130,246,0.15)"><i class="ti ti-user" style="font-size:14px;color:var(--c-primary-bright)"></i> ${s.customer}</div>`:''}
         <div style="display:flex;gap:8px;margin-top:12px">
@@ -338,7 +377,7 @@
           </button>
         </div>
       </div>`;
-    }).join('') : `<div class="empty"><i class="ti ti-receipt"></i><p>Satış yok</p></div>`;
+    }).join('') : `<div class="empty"><i class="ti ti-receipt"></i><p>Satış bulunamadı</p></div>`;
   };
 
   // ======= FILTER =======
@@ -437,8 +476,8 @@
       <svg width="26" height="26" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="1" width="16" height="26" rx="3" stroke="currentColor" stroke-width="1.8"/><rect x="9" y="3.5" width="10" height="1.5" rx="0.75" fill="currentColor" opacity="0.4"/><circle cx="14" cy="23.5" r="1.2" fill="currentColor" opacity="0.6"/><rect x="9" y="7" width="10" height="13" rx="1.5" fill="currentColor" opacity="0.08"/><line x1="9" y1="10" x2="19" y2="10" stroke="currentColor" stroke-width="1" opacity="0.3"/><line x1="9" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1" opacity="0.3"/></svg>
       Bat<span>Lab</span> ai
     </div>
-    <div class="login-sub">Kasiyer — Satış Sistemi</div>
-    <div class="fg"><label>E-posta</label><input type="email" id="loginEmail" placeholder="ornek@email.com"></div>
+    <div class="login-sub">Kasiyer — Satış Sistemi - BatLab</div>
+    <div class="fg"><label>E-posta</label><input type="email" id="loginEmail" placeholder="example@email.com"></div>
     <div class="fg"><label>Şifre</label><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-primary" id="loginBtn" onclick="doLogin()" style="width:100%;justify-content:center;">
       <i class="ti ti-login"></i> Giriş
@@ -453,10 +492,9 @@
   <div class="cashier-topbar">
     <div class="cashier-logo" style="gap:10px">
       <img src="logo website.png" alt="BatLab" style="width:36px;height:36px;border-radius:10px;object-fit:contain">
-      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px"> seleme web  </span>
+      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px"> BatLab </span>
     </div>
 
-    <!-- Ana sekmeler -->
     <div class="topbar-tabs">
       <button class="topbar-tab active" data-page="sale" onclick="showPage('sale')">
         <i class="ti ti-shopping-cart"></i> Satış Kaydet
@@ -469,10 +507,8 @@
       </button>
     </div>
 
-    <!-- Canlı göstergesi -->
     <div id="liveIndicator" style="display:flex;align-items:center"></div>
 
-    <!-- İşlemler -->
     <div class="topbar-actions">
       <button onclick="toggleTheme()" title="Tema değiştir"
         style="padding:6px 8px;background:transparent;border:1px solid var(--c-border);border-radius:8px;cursor:pointer;color:var(--c-text2);font-size:15px;display:flex;align-items:center">
@@ -496,7 +532,7 @@
       <!-- Dolar kuru -->
       <div class="card" style="margin-bottom:16px;padding:14px 18px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="font-size:11px;color:var(--c-text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Dolar kuru ₺/$</div>
+          <div style="font-size:11px;color:var(--c-text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Dolar Kuru ₺/$</div>
           <div style="display:flex;align-items:center;gap:6px;flex:1;max-width:220px">
             <input type="number" id="rateInput" step="0.1" min="1"
               style="flex:1;padding:7px 10px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;font-weight:700"
@@ -513,13 +549,13 @@
       <div class="sale-form-card">
         <div class="sale-form-title"><i class="ti ti-box"></i> Ürün</div>
 
-        <!-- Ada göre ara -->
+        <!-- İsimle ara -->
         <div style="position:relative;margin-bottom:10px">
-          <i class="ti ti-search" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--c-text3);pointer-events:none;z-index:1"></i>
+          <i class="ti ti-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--c-text3);pointer-events:none;z-index:1"></i>
           <input type="text" id="cashierNameSearch"
             placeholder="Ürün adıyla ara..."
             autocomplete="off"
-            style="width:100%;padding:13px 40px 13px 14px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;box-sizing:border-box;transition:border-color .2s;outline:none"
+            style="width:100%;padding:13px 14px 13px 40px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:15px;font-family:'Cairo',sans-serif;box-sizing:border-box;transition:border-color .2s;outline:none"
             oninput="cashierFilterByName(this.value)"
             onfocus="cashierFilterByName(this.value);this.style.borderColor='rgba(99,102,241,0.55)'"
             onblur="setTimeout(function(){cashierHideDD()},180);this.style.borderColor='var(--c-border)'"
@@ -546,12 +582,12 @@
           </button>
         </div>
 
-        <!-- Manuel -->
+        <!-- Manuel barkod -->
         <div id="barcodeInputWrap" style="display:none;margin-top:8px">
-          <input type="text" id="barcodeInput" placeholder="Barkod yazın..."
+          <input type="text" id="barcodeInput" placeholder="Barkod girin..."
             style="width:100%;padding:10px 12px;border:1px solid var(--c-primary);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:14px;font-family:'JetBrains Mono',monospace"
             oninput="searchByBarcode(this.value)" onkeydown="if(event.key==='Escape')toggleBarcodeInput()">
-          <div style="font-size:11px;color:var(--c-text3);margin-top:4px">İptal için ESC tuşuna basın</div>
+          <div style="font-size:11px;color:var(--c-text3);margin-top:4px">İptal için ESC'ye basın</div>
         </div>
 
         <!-- Kamera -->
@@ -573,7 +609,7 @@
         </div>
       </div>
 
-      <!-- Miktar ve fiyat -->
+      <!-- Miktar ve Fiyat -->
       <div class="sale-form-card">
         <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">
           <!-- Miktar -->
@@ -600,13 +636,12 @@
           </div>
         </div>
 
-        <!-- Gizli maliyet alanları (dahili kullanım) -->
         <input type="hidden" id="quickCostUSD">
         <input type="hidden" id="quickCostTRY">
 
         <!-- Müşteri -->
         <div style="margin-bottom:14px">
-          <div class="sale-form-title"><i class="ti ti-user"></i> Müşteri adı (isteğe bağlı)</div>
+          <div class="sale-form-title"><i class="ti ti-user"></i> Müşteri Adı (isteğe bağlı)</div>
           <input type="text" id="quickCustomer" placeholder="Müşteri adı"
             style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
         </div>
@@ -618,8 +653,6 @@
             style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;height:60px;resize:vertical"></textarea>
         </div>
 
-        <!-- Özet -->
-        <!-- Dahili hesaplama için gizli değerler -->
         <span id="qTotal" style="display:none">$0.00</span>
         <span id="qTotalTRY" style="display:none">₺0</span>
         <span id="qProfit" style="display:none">$0.00</span>
@@ -635,16 +668,15 @@
 
       <div style="max-width:480px;margin:0 auto">
 
-        <!-- Header -->
         <div style="text-align:center;margin-bottom:28px;padding-top:8px">
           <div style="width:60px;height:60px;background:rgba(99,102,241,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:1px solid rgba(99,102,241,0.3)">
             <i class="ti ti-coins" style="font-size:26px;color:var(--c-primary-bright)"></i>
           </div>
           <div style="font-size:20px;font-weight:800;color:var(--c-text)">Kâr Kaydet</div>
-          <div style="font-size:13px;color:var(--c-text3);margin-top:4px">Yönetim sayfasındaki istatistiklerde görünecektir</div>
+          <div style="font-size:13px;color:var(--c-text3);margin-top:4px">Yönetim sayfasındaki istatistiklerde görünecek</div>
         </div>
 
-        <!-- Kâr türü -->
+        <!-- Kâr Türü -->
         <div class="sale-form-card" style="margin-bottom:16px">
           <div class="sale-form-title"><i class="ti ti-category"></i> Kâr Türü</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
@@ -662,16 +694,15 @@
           <input type="hidden" id="selectedProfitType" value="invoice">
         </div>
 
-        <!-- Miktar -->
+        <!-- Tutar -->
         <div class="sale-form-card" style="margin-bottom:16px">
-          <div class="sale-form-title"><i class="ti ti-currency-lira"></i> Lira Miktarı</div>
+          <div class="sale-form-title"><i class="ti ti-currency-lira"></i> Lira Tutarı</div>
           <div style="position:relative;margin-top:6px">
             <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:18px;font-weight:800;color:var(--c-text3);pointer-events:none">₺</div>
             <input type="number" id="profitAmtTRY" placeholder="0" min="0" step="1"
               oninput="updateProfitPreview()"
               style="width:100%;padding:14px 36px 14px 12px;border:1px solid var(--c-border);border-radius:12px;background:var(--c-bg3);color:var(--c-text);font-size:22px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box;outline:none">
           </div>
-          <!-- USD karşılığı -->
           <div id="profitUSDPreview" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center">
             <span style="font-size:13px;color:var(--c-text3)">Eşdeğer: </span>
             <span id="profitUSDVal" style="font-size:16px;font-weight:700;color:var(--c-green)">$0.00</span>
@@ -681,20 +712,18 @@
         <!-- Not -->
         <div class="sale-form-card" style="margin-bottom:20px">
           <div class="sale-form-title"><i class="ti ti-notes"></i> Not (isteğe bağlı)</div>
-          <input type="text" id="profitNote" placeholder="Örnek: müşteri faturası, cihaz tamiri..."
+          <input type="text" id="profitNote" placeholder="Örnek: müşteri faturası, cihaz onarımı..."
             style="width:100%;padding:11px 14px;border:1px solid var(--c-border);border-radius:12px;background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;box-sizing:border-box;margin-top:6px;outline:none">
         </div>
 
-        <!-- Kaydet butonu -->
         <button onclick="submitProfit()"
           style="width:100%;padding:15px;background:linear-gradient(135deg,#4F46E5,#6366F1);border:none;border-radius:14px;cursor:pointer;color:#fff;font-size:16px;font-family:'Cairo',sans-serif;font-weight:800;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(99,102,241,0.35)">
           <i class="ti ti-check" style="font-size:20px"></i> Kârı Kaydet
         </button>
 
-        <!-- Not -->
         <div style="margin-top:16px;padding:12px 16px;background:var(--c-bg2);border:1px solid var(--c-border);border-radius:10px;display:flex;align-items:center;gap:10px">
           <i class="ti ti-info-circle" style="font-size:16px;color:var(--c-primary-bright);flex-shrink:0"></i>
-         </div>
+        </div>
 
       </div>
     </div><!-- /page-profit -->
@@ -705,7 +734,7 @@
       <div class="tabs">
         <div class="tab active" onclick="filterSales('all',this)">Tümü</div>
         <div class="tab" onclick="filterSales('cash',this)">Nakit</div>
-        <div class="tab" onclick="filterSales('debt',this)">Borç</div>
+        <div class="tab" onclick="filterSales('debt',this)">Veresiye</div>
         <div class="tab" onclick="filterSales('return',this)">İade</div>
         <div class="tab" onclick="filterSales('partial',this)">Taksit</div>
       </div>
@@ -722,7 +751,7 @@
         <span style="font-size:11px;color:var(--c-text2);font-family:'Cairo',sans-serif;font-weight:600">Mustafa SELEME</span>
         <span style="width:1px;height:12px;background:var(--c-border);display:inline-block"></span>
         <a href="https://wa.me/905523223191" target="_blank" rel="noopener" style="font-size:11px;color:var(--c-primary-bright);text-decoration:none;font-family:'Cairo',sans-serif;font-weight:600;display:flex;align-items:center;gap:4px">
-          <i class="ti ti-brand-whatsapp" style="font-size:13px;color:#25D366"></i>+905523223191
+          <i class="ti ti-brand-whatsapp" style="font-size:13px;color:#25D366"></i>05523223191
         </a>
       </div>
     </div>
@@ -751,14 +780,12 @@ window.updateQuickSale = () => {
     const low   = p.qty < 5;
     const color = p.qty===0?'var(--c-red)':low?'var(--c-amber)':'var(--c-green)';
     qtyBadge.style.display = 'flex';
-    qtyBadge.innerHTML = `<i class="ti ti-package" style="font-size:13px;margin-left:4px"></i> Mevcut miktar: <b style="color:${color};margin-right:4px">${p.qty}</b>${p.qty===0?'<span style="color:var(--c-red)"> — Stok tükendi</span>':low?'<span style="color:var(--c-amber)"> — Düşük stok</span>':''}`;
+    qtyBadge.innerHTML = `<i class="ti ti-package" style="font-size:13px;margin-right:4px"></i> Mevcut stok: <b style="color:${color};margin-left:4px">${p.qty}</b>${p.qty===0?'<span style="color:var(--c-red)"> — Stok tükendi</span>':low?'<span style="color:var(--c-amber)"> — Düşük stok</span>':''}`;
   }
   const buyUSD  = p.currency==='usd' ? p.buyPrice : p.buyPrice/st.rate;
   const sellUSD = p.currency==='usd' ? p.sellPrice : p.sellPrice/st.rate;
-  // Maliyeti gizli alanlarda sakla (submitQuickSale tarafından kullanılır)
   document.getElementById('quickCostUSD').value = buyUSD.toFixed(2);
   document.getElementById('quickCostTRY').value = (buyUSD*st.rate).toFixed(0);
-  // Referans fiyat rozetini göster
   const refBadge = document.getElementById('quickRefPriceBadge');
   if(refBadge){
     refBadge.style.display = 'inline-flex';
@@ -798,7 +825,7 @@ function recalcSummary(){
     if(priceUSD<=buyUSD){
       const diff=((buyUSD-priceUSD)*st.rate).toFixed(0);
       warnEl.style.display='block';
-      warnEl.innerHTML=`<i class="ti ti-alert-triangle"></i> Bu fiyat olmaz! ₺ zarar ediyorsunuz${diff}`;
+      warnEl.innerHTML=`<i class="ti ti-alert-triangle"></i> Bu fiyat olmaz! ₺${diff} zararına satıyorsunuz!`;
     } else { warnEl.style.display='none'; }
   } else if(warnEl){ warnEl.style.display='none'; }
 }
@@ -839,11 +866,11 @@ window.updateProfitPreview = () => {
 };
 
 window.submitProfit = async () => {
-  if(window._busy){ showToast('İşlem devam ediyor, lütfen bekleyin...','error'); return; }
+  if(window._busy){ showToast('Bir işlem devam ediyor, lütfen bekleyin...','error'); return; }
   const type    = document.getElementById('selectedProfitType')?.value || 'invoice';
   const amtTRY  = parseFloat(document.getElementById('profitAmtTRY')?.value) || 0;
   const note    = (document.getElementById('profitNote')?.value || '').trim();
-  if(!amtTRY || amtTRY <= 0){ showToast('Kâr miktarı girin','error'); return; }
+  if(!amtTRY || amtTRY <= 0){ showToast('Kâr tutarını girin','error'); return; }
   const rate   = window.state?.rate || 32.5;
   const amount = amtTRY / rate;
   const uid    = window._auth?.currentUser?.uid || '';
@@ -860,7 +887,7 @@ window.submitProfit = async () => {
     document.getElementById('profitAmtTRY').value = '';
     document.getElementById('profitNote').value = '';
     document.getElementById('profitUSDPreview').style.display = 'none';
-    const typeLabel = type === 'invoice' ? 'Bakiye kârı' : 'Servis kârı';
+    const typeLabel = type === 'invoice' ? 'Bakiye Kârı' : 'Servis Kârı';
     showToast(`✓ ${typeLabel} kaydedildi — ₺${amtTRY.toLocaleString()}`, 'success');
   } catch(e){ showToast('Hata: '+e.message,'error'); }
   finally { setBusy(false); }
@@ -900,7 +927,7 @@ window.startCameraScanner = async () => {
   wrap.style.display='block';
   document.getElementById('barcodeInputWrap').style.display='none';
   if(typeof ZXing==='undefined'){
-    if(status) status.innerHTML='<span style="color:var(--c-red)">⚠ Tarama kütüphanesi yüklenemedi</span>';
+    if(status) status.innerHTML='<span style="color:var(--c-red)">⚠ Okuma kütüphanesi yüklenmedi</span>';
     return;
   }
   try {
@@ -927,7 +954,7 @@ window.startCameraScanner = async () => {
       }
     });
   } catch(e){
-    if(status) status.innerHTML=`<span style="color:var(--c-red)">⚠ Kameraya erişilemiyor: ${e.message}</span>`;
+    if(status) status.innerHTML=`<span style="color:var(--c-red)">⚠ Kameraya erişilemedi: ${e.message}</span>`;
   }
 };
 
@@ -1019,7 +1046,7 @@ window.cashierHandleKey = function(e) {
   }
 };
 
-// Satış sonrası: arama alanını sıfırla
+// Satıştan sonra arama alanını sıfırla
 var _origSubmit = window.submitQuickSale;
 window.submitQuickSale = async function() {
   await _origSubmit();

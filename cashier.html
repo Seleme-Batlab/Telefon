@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>كاشير —</title>
+<title>كاشير — Batlab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link rel="stylesheet" href="cashier.css">
+<link rel="icon" type="image/png" href="logo website.ico"/>
 
 <style>
 @keyframes livePulse {
@@ -47,6 +48,8 @@
     rate: 32.5,
     products: [],
     sales: [],
+    employees: [],
+    currentEmployee: null,
     saleFilter: 'all',
     activePage: 'sale'
   };
@@ -101,17 +104,88 @@
         }
       } catch(e) {}
       document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('appScreen').style.display = 'flex';
+      document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('employeeLoginScreen').style.display = 'flex';
       document.getElementById('userEmail').textContent = user.email;
       loadAllData();
       fetchRate();
+      loadEmployees();
+      loadStoreSettings();
     } else {
       const expiredScreen = document.getElementById('expiredScreen');
       if (expiredScreen) expiredScreen.style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('employeeLoginScreen').style.display = 'none';
+      window.state.currentEmployee = null;
     }
   });
+
+  // ======= EMPLOYEE AUTH =======
+  window.loadEmployees = async () => {
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return;
+      const snap = await getDocs(query(collection(db, 'employees'), where('userId', '==', uid)));
+      window.state.employees = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    } catch(e) {}
+  };
+
+  window.doEmployeeLogin = async () => {
+    const username = (document.getElementById('empLoginUsername')?.value || '').trim();
+    const pass = (document.getElementById('empLoginPass')?.value || '').trim();
+    const btn = document.getElementById('empLoginBtn');
+    if (!username || !pass) { showToast('أدخل اسم المستخدم وكلمة السر', 'error'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'جاري التحقق...'; }
+    try {
+      // Reload employees to get latest
+      await loadEmployees();
+      const emp = window.state.employees.find(e =>
+        (e.username || '').toLowerCase() === username.toLowerCase() && e.password === pass
+      );
+      if (!emp) {
+        showToast('اسم المستخدم أو كلمة السر غير صحيحة', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'دخول'; }
+        return;
+      }
+      // Update lastLogin
+      try {
+        await updateDoc(doc(db, 'employees', emp.id), { lastLogin: new Date().toISOString() });
+      } catch(e) {}
+      window.state.currentEmployee = { id: emp.id, name: emp.name, username: emp.username };
+      // Show app
+      document.getElementById('employeeLoginScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'flex';
+      // Apply store settings to UI
+      if(window.applyCashierSettings) window.applyCashierSettings();
+      // Update employee badge in topbar
+      const badge = document.getElementById('empNameBadge');
+      if (badge) badge.textContent = emp.name;
+      const badgeWrap = document.getElementById('empBadgeWrap');
+      if (badgeWrap) badgeWrap.style.display = 'flex';
+      if (btn) { btn.disabled = false; btn.textContent = 'دخول'; }
+      // حدّث قائمة المنتجات وسجل المبيعات بناءً على الموظف الحالي
+      populateDropdown();
+      renderSales();
+      showToast('أهلاً ' + emp.name + ' 👋', 'success');
+    } catch(e) {
+      showToast('خطأ: ' + e.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'دخول'; }
+    }
+  };
+
+  window.doEmployeeLogout = () => {
+    window.state.currentEmployee = null;
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('employeeLoginScreen').style.display = 'flex';
+    const empUser = document.getElementById('empLoginUsername');
+    const empPass = document.getElementById('empLoginPass');
+    if (empUser) empUser.value = '';
+    if (empPass) empPass.value = '';
+    const badgeWrap = document.getElementById('empBadgeWrap');
+    if (badgeWrap) badgeWrap.style.display = 'none';
+    showToast('تم تسجيل خروج الموظف', 'success');
+  };
 
   window.doLogin = async () => {
     const email = document.getElementById('loginEmail').value.trim();
@@ -179,11 +253,20 @@
   // keep backward compat if anything calls loadAllData
   async function loadAllData() { subscribeRealtime(); }
 
+  // ======= EMPLOYEE PRODUCTS FILTER =======
+  // صفحة البيع: يشوف كل المنتجات عشان يقدر يبيع
+  // صفحة السجل: يتفلتر في renderSales بناءً على employeeId
+  function getEmployeeProducts() {
+    return window.state.products || [];
+  }
+  window.getEmployeeProducts = getEmployeeProducts;
+
   function populateDropdown() {
     const sel = document.getElementById('quickProduct');
     if(!sel) return;
+    const products = getEmployeeProducts();
     sel.innerHTML = '<option value="">-- اختر منتجاً --</option>' +
-      window.state.products.map(p =>
+      products.map(p =>
         `<option value="${p.id}">${p.name} (${p.qty})</option>`
       ).join('');
   }
@@ -204,7 +287,46 @@
 
   window.setManualRate = (v) => {
     const num = parseFloat(v);
-    if(num > 1) window.state.rate = num;
+    if(num > 1) {
+      window.state.rate = num;
+      if(window.updateQuickSale) window.updateQuickSale();
+    }
+  };
+
+  // ======= PAYMENT METHOD =======
+  window.selectPayMethod = (method) => {
+    document.getElementById('selectedPayMethod').value = method;
+    const colors = {
+      cash:  { border:'var(--c-green)',   bg:'rgba(16,185,129,0.12)',  color:'var(--c-green)'         },
+      iban:  { border:'var(--c-primary)', bg:'rgba(59,130,246,0.12)', color:'var(--c-primary-bright)' },
+      pos:   { border:'#A78BFA',          bg:'rgba(167,139,250,0.12)', color:'#A78BFA'                },
+      debt:  { border:'var(--c-amber)',   bg:'rgba(245,158,11,0.12)', color:'var(--c-amber)'          },
+    };
+    ['cash','iban','pos','debt'].forEach(m => {
+      const btn = document.getElementById('payBtn-'+m);
+      if(!btn) return;
+      if(m === method) {
+        const c = colors[m];
+        btn.style.border     = `2px solid ${c.border}`;
+        btn.style.background = c.bg;
+        btn.style.color      = c.color;
+      } else {
+        btn.style.border     = '1px solid var(--c-border)';
+        btn.style.background = 'var(--c-bg3)';
+        btn.style.color      = 'var(--c-text2)';
+      }
+    });
+    // حقول الدين
+    const debtDiv = document.getElementById('debtFields');
+    if(debtDiv) debtDiv.style.display = method === 'debt' ? 'block' : 'none';
+    // لما يختار دين — امأل اسم البائع تلقائياً
+    if(method === 'debt') {
+      const empName = window.state.currentEmployee?.name || '';
+      const sellerInp = document.getElementById('debtSellerName');
+      if(sellerInp && !sellerInp.value) sellerInp.value = empName;
+    }
+    // تحديث الأرباح وعمولة POS عند تغيير طريقة الدفع
+    if(window.updateQuickSale) window.updateQuickSale();
   };
 
   // ======= SUBMIT SALE =======
@@ -215,22 +337,87 @@
     const p   = st.products.find(x=>x.id===pid);
     if(!p){showToast('اختر منتجاً','error');return;}
     const qty = parseInt(document.getElementById('quickQty')?.value)||1;
+    // منع البيع عند نفاد المخزون (حسب الإعدادات)
+    if(window._storeSettings?.blockZeroStock !== false && p.qty <= 0){showToast('المخزون نفد! لا يمكن البيع','error');return;}
     if(qty > p.qty){showToast('الكمية المتاحة: '+p.qty,'error');return;}
     const priceUSD = parseFloat(document.getElementById('quickPriceUSD')?.value)||0;
     if(!priceUSD){showToast('أدخل سعر البيع','error');return;}
     const buyUSD = p.currency==='usd' ? p.buyPrice : p.buyPrice/st.rate;
-    if(priceUSD <= buyUSD){
-      const diff = ((buyUSD-priceUSD)*st.rate).toFixed(0);
-      showToast(`⚠️ سعر البيع أقل من التكلفة بـ ₺${diff}!`,'error');
-      return;
+    // فحص حد أدنى سعر البيع (حسب الإعدادات)
+    if(window._storeSettings?.blockBelowCost !== false) {
+      const sellUSD_cs = p.currency==='usd' ? p.sellPrice : p.sellPrice/st.rate;
+      const minMarginTRY_cs = window._storeSettings?.minMarginTRY || 0;
+      const sellTRY_cs = sellUSD_cs * st.rate;
+      const priceTRY_cs = priceUSD * st.rate;
+      const minAllowedTRY_cs = Math.max(0, sellTRY_cs - minMarginTRY_cs);
+      if(priceTRY_cs < minAllowedTRY_cs) {
+        showToast(`⚠️ لا يُباع بأقل من ₺${minAllowedTRY_cs.toFixed(0)} — الحد المسموح ₺${minMarginTRY_cs} تحت سعر البيع`, 'error');
+        return;
+      }
     }
     const customer = document.getElementById('quickCustomer')?.value||'';
+    const payMethod = document.getElementById('selectedPayMethod')?.value || 'cash';
+
+    // تحقق من حقول الدين
+    let debtCustomer = '';
+    let debtSeller   = '';
+    let debtPhone    = '';
+    let debtDueDate  = '';
+    let debtDesc     = '';
+    if(payMethod === 'debt') {
+      debtCustomer = (document.getElementById('debtCustomerName')?.value||'').trim();
+      debtSeller   = (document.getElementById('debtSellerName')?.value||'').trim();
+      debtPhone    = (document.getElementById('debtPhone')?.value||'').trim();
+      debtDueDate  = (document.getElementById('debtDueDate')?.value||'').trim();
+      debtDesc     = (document.getElementById('debtDesc')?.value||'').trim();
+      if(!debtCustomer){ showToast('أدخل اسم العميل للدين','error'); return; }
+      // فحص حد الدين الأقصى (المقارنة بالليرة التركية)
+      const maxDebt_cs = window._storeSettings?.maxDebtPerCustomer || 0;
+      if(maxDebt_cs > 0 && window.state?.sales) {
+        const existDebt_cs = window.state.sales
+          .filter(s=>s.type==='debt'&&(s.customer===debtCustomer||s.debtCustomer===debtCustomer))
+          .reduce((a,s)=>a+s.price*(s.qty||1),0);
+        const partials_cs = window.state.sales
+          .filter(s=>s.type==='partial'&&s.customer===debtCustomer)
+          .reduce((a,s)=>a+s.price,0);
+        const priceUSD_cs = parseFloat(document.getElementById('quickPriceUSD')?.value)||0;
+        const qty_cs = parseInt(document.getElementById('quickQty')?.value)||1;
+        const netDebt_cs = existDebt_cs - partials_cs + priceUSD_cs * qty_cs;
+        const rate_cs = window.state.rate || 32.5;
+        const netDebtTRY_cs = netDebt_cs * rate_cs;
+        if(netDebtTRY_cs > maxDebt_cs){
+          showToast(`⚠️ تجاوز حد الدين (₺${maxDebt_cs.toFixed(0)}) — رصيد ${debtCustomer}: ₺${((existDebt_cs-partials_cs)*rate_cs).toFixed(0)}`,'error');
+          return;
+        }
+      }
+    }
+
+    const emp = window.state.currentEmployee;
+    const saleType = payMethod === 'debt' ? 'debt' : payMethod === 'pos' ? 'pos' : 'cash';
+    // حساب عمولة POS
+    const s_cfg = window._storeSettings || {};
+    const isPosPay = saleType === 'pos';
+    const posCommission = (isPosPay && s_cfg.posEnabled && s_cfg.posFee > 0)
+      ? parseFloat((priceUSD * qty * s_cfg.posFee / 100).toFixed(4))
+      : 0;
+    const netPrice = parseFloat((priceUSD - (isPosPay && s_cfg.posEnabled && s_cfg.posFee > 0 ? priceUSD * s_cfg.posFee / 100 : 0)).toFixed(4));
     const saleData = {
       productId: pid, productName: p.name, qty, price: priceUSD,
-      currency: 'usd', type: 'cash', customer,
+      netPrice,          // سعر البيع بعد خصم عمولة POS
+      posCommission,     // عمولة POS بالدولار
+      currency: 'usd', type: saleType,
+      payMethod,
+      customer: payMethod === 'debt' ? debtCustomer : customer,
+      debtCustomer: payMethod === 'debt' ? debtCustomer : '',
+      debtSeller:   payMethod === 'debt' ? debtSeller   : '',
+      phone:        payMethod === 'debt' ? debtPhone    : '',
+      dueDate:      payMethod === 'debt' ? debtDueDate  : '',
+      notes:        payMethod === 'debt' ? debtDesc     : (document.getElementById('quickNotes')?.value||''),
       date: new Date().toISOString().split('T')[0],
       cost: buyUSD, createdAt: new Date().toISOString(),
-      userId: auth.currentUser.uid
+      userId: auth.currentUser.uid,
+      employeeId: emp?.id || '',
+      employeeName: emp?.name || ''
     };
     setBusy(true,'جاري تسجيل البيع...');
     try {
@@ -249,12 +436,33 @@
       document.getElementById('quickCostTRY').value = '';
       document.getElementById('quickCustomer').value = '';
       document.getElementById('quickNotes').value = '';
+      const discEl = document.getElementById('quickDiscountTRY');
+      if(discEl) discEl.value = '';
+      const origDisp = document.getElementById('origPriceDisplay');
+      if(origDisp) origDisp.style.display = 'none';
+      const finalDisp = document.getElementById('finalPriceDisplay');
+      if(finalDisp) finalDisp.style.display = 'none';
+      const cashierSearch = document.getElementById('cashierNameSearch');
+      if(cashierSearch) cashierSearch.value = '';
       const qtyBadge = document.getElementById('quickAvailQty');
       if(qtyBadge) qtyBadge.style.display = 'none';
       const refBadge = document.getElementById('quickRefPriceBadge');
       if(refBadge) refBadge.style.display = 'none';
       const warnEl = document.getElementById('quickPriceWarning');
       if(warnEl) warnEl.style.display = 'none';
+      // reset debt fields
+      const dCust = document.getElementById('debtCustomerName');
+      const dSell = document.getElementById('debtSellerName');
+      const dPhone = document.getElementById('debtPhone');
+      const dDue  = document.getElementById('debtDueDate');
+      const dDesc = document.getElementById('debtDesc');
+      if(dCust)  dCust.value  = '';
+      if(dSell)  dSell.value  = '';
+      if(dPhone) dPhone.value = '';
+      if(dDue)   dDue.value   = '';
+      if(dDesc)  dDesc.value  = '';
+      // reset payment method to cash
+      selectPayMethod('cash');
       setText('qTotal','$0.00'); setText('qTotalTRY','₺0'); setText('qProfit','$0.00');
       populateDropdown();
       renderSales();
@@ -263,30 +471,7 @@
     finally { setBusy(false); }
   };
 
-  // ======= DELETE / EDIT SALE =======
-  window.deleteSale = async (saleId) => {
-    if(window._busy){showToast('جاري تنفيذ عملية...','error');return;}
-    if(!confirm('حذف هذه العملية نهائياً؟')) return;
-    const sale = window.state.sales.find(s=>s.id===saleId);
-    if(!sale) return;
-    setBusy(true,'جاري الحذف...');
-    try {
-      await deleteDoc(doc(db,'sales',saleId));
-      if(sale.type==='cash'||sale.type==='sell'){
-        const pIdx = window.state.products.findIndex(p=>p.id===sale.productId);
-        if(pIdx>-1){
-          const newQty = window.state.products[pIdx].qty + sale.qty;
-          await updateDoc(doc(db,'products',sale.productId),{qty:newQty});
-          window.state.products[pIdx].qty = newQty;
-        }
-      }
-      // لا نحذف يدوياً — الـ onSnapshot سيتكفل بالتحديث تلقائياً
-      populateDropdown();
-      showToast('تم حذف العملية ✓','success');
-    } catch(e){showToast('خطأ: '+e.message,'error');}
-    finally { setBusy(false); }
-  };
-
+  // ======= EDIT SALE =======
   window.openEditSaleModal = (saleId) => {
     const s = window.state.sales.find(x=>x.id===saleId);
     if(!s) return;
@@ -334,20 +519,32 @@
   // ======= RENDER SALES =======
   window.renderSales = () => {
     const st = window.state;
+    const emp = st.currentEmployee;
     const filter = st.saleFilter;
-    const list   = st.sales.filter(s=>filter==='all'||s.type===filter);
+    // بس مبيعات الموظف الحالي
+    const empSales = emp
+      ? st.sales.filter(s => s.employeeId === emp.id)
+      : st.sales;
+    const list = empSales.filter(s=>filter==='all'||s.type===filter);
     const el     = document.getElementById('salesList');
     if(!el) return;
-    const typeLabelMap = {cash:'نقدي',debt:'دين',partial:'دفعة',return:'إعادة',waste:'هدر'};
-    const typeBadgeMap = {cash:'badge-g',debt:'badge-a',partial:'badge-b',return:'badge-p',waste:'badge-r'};
-    const typeIconMap  = {cash:'ti-cash',debt:'ti-clock-dollar',partial:'ti-coin',return:'ti-arrow-back-up',waste:'ti-trash'};
+    const typeLabelMap = {cash:'نقدي',pos:'POS',debt:'دين',partial:'دفعة',return:'إعادة',waste:'هدر'};
+    const typeBadgeMap = {cash:'badge-g',pos:'badge-b',debt:'badge-a',partial:'badge-b',return:'badge-p',waste:'badge-r'};
+    const typeIconMap  = {cash:'ti-cash',pos:'ti-device-mobile',debt:'ti-clock-dollar',partial:'ti-coin',return:'ti-arrow-back-up',waste:'ti-trash'};
+    const payMethodLabel = {cash:'نقدي',iban:'IBAN',pos:'POS',debt:'دين'};
+    const payMethodIcon  = {cash:'ti-cash',iban:'ti-building-bank',pos:'ti-device-mobile',debt:'ti-clock-dollar'};
     el.innerHTML = list.length ? list.map(s=>{
       const total   = s.price*s.qty;
       const buyUSD  = s.cost||0;
-      const profit  = (s.price-buyUSD)*s.qty;
+      const posComm = s.posCommission || 0;
+      const profit  = ((s.netPrice||s.price)-buyUSD)*s.qty;
       const badgeCls= typeBadgeMap[s.type]||'badge-b';
       const label   = typeLabelMap[s.type]||s.type;
       const icon    = typeIconMap[s.type]||'ti-receipt';
+      // شارة طريقة الدفع
+      const pm = s.payMethod || s.type;
+      const pmLabel = payMethodLabel[pm] || label;
+      const pmIcon  = payMethodIcon[pm]  || icon;
       return `
       <div class="card" style="margin-bottom:14px;padding:20px;border-right:4px solid ${s.type==='cash'?'var(--c-green)':s.type==='debt'?'var(--c-amber)':s.type==='partial'?'var(--c-primary)':s.type==='return'?'#A78BFA':'var(--c-red)'}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
@@ -357,7 +554,10 @@
             </div>
             <div>
               <div style="font-size:15px;font-weight:700;margin-bottom:3px">${s.productName}</div>
-              <span class="badge ${badgeCls}">${label}</span>
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+                <span class="badge ${badgeCls}">${label}</span>
+                ${pm && pm !== s.type ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;background:var(--c-bg3);border:1px solid var(--c-border);border-radius:20px;padding:2px 8px;color:var(--c-text2)"><i class="ti ${pmIcon}" style="font-size:11px"></i>${pmLabel}</span>` : ''}
+              </div>
             </div>
           </div>
           <div style="text-align:center">
@@ -374,16 +574,24 @@
             <div style="font-size:10px;color:var(--c-text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">التاريخ</div>
             <div style="font-size:13px;font-weight:600">${s.date||'—'}</div>
           </div>
-          
         </div>
+        ${s.type==='pos' && posComm > 0 ? `<div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;font-size:12px;background:rgba(96,165,250,0.08);padding:6px 10px;border-radius:var(--radius-sm);border:1px solid rgba(96,165,250,0.2)"><span style="color:var(--c-text3);display:flex;align-items:center;gap:4px"><i class="ti ti-credit-card" style="font-size:12px;color:#60A5FA"></i>عمولة POS</span><span style="color:#60A5FA;font-weight:700">-$${posComm.toFixed(2)}</span></div>` : ''}
         ${s.customer?`<div style="margin-top:10px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--c-text2);background:rgba(59,130,246,0.08);padding:6px 10px;border-radius:var(--radius-sm);border:1px solid rgba(59,130,246,0.15)"><i class="ti ti-user" style="font-size:14px;color:var(--c-primary-bright)"></i> ${s.customer}</div>`:''}
+        ${s.type==='debt'&&(s.debtCustomer||s.debtSeller)?`
+        <div style="margin-top:10px;padding:10px 12px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm)">
+          <div style="font-size:10px;font-weight:700;color:var(--c-amber);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em"><i class="ti ti-clock-dollar" style="font-size:11px"></i> بيانات الدين</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            ${s.debtCustomer?`<div style="display:flex;align-items:center;gap:6px;font-size:12px"><i class="ti ti-user" style="font-size:12px;color:var(--c-amber)"></i><span style="color:var(--c-text3)">العميل:</span><span style="font-weight:700;color:var(--c-text)">${s.debtCustomer}</span></div>`:''}
+            ${s.debtSeller?`<div style="display:flex;align-items:center;gap:6px;font-size:12px"><i class="ti ti-user-check" style="font-size:12px;color:var(--c-amber)"></i><span style="color:var(--c-text3)">البائع:</span><span style="font-weight:700;color:var(--c-text)">${s.debtSeller}</span></div>`:''}
+          </div>
+        </div>`:''}
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn-sm" style="flex:1;justify-content:center;padding:8px" onclick="openEditSaleModal('${s.id}')">
             <i class="ti ti-edit"></i> تعديل
           </button>
-          <button class="btn-sm btn-red" style="flex:1;justify-content:center;padding:8px" onclick="deleteSale('${s.id}')">
-            <i class="ti ti-trash"></i> حذف
-          </button>
+          ${(s.type !== 'return' && s.type !== 'partial') ? `<button class="btn-sm" style="flex:1;justify-content:center;padding:8px;background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.45);color:#A78BFA" onclick="openReturnFromSale('${s.id}')">
+            <i class="ti ti-arrow-back-up"></i> ترجيع
+          </button>` : ''}
         </div>
       </div>`;
     }).join('') : `<div class="empty"><i class="ti ti-receipt"></i><p>لا توجد مبيعات</p></div>`;
@@ -455,6 +663,292 @@
   };
 
   setTimeout(()=>{ const inp=document.getElementById('rateInput'); if(inp) inp.value=window.state.rate.toFixed(2); },300);
+
+  // =============================================
+  // ===== STORE SETTINGS =====
+  // =============================================
+  window._storeSettings = {
+    allowDebt: false,
+    maxDebtPerCustomer: 0,
+    blockBelowCost: true,
+    minMarginTRY: 0,
+    allowReturns: true,
+    posEnabled: false,
+    posFee: 2.5,
+    lowStockThreshold: 5,
+    blockZeroStock: true,
+    storeName: '',
+    hideProfitCashier: false,
+    displayCurrency: 'TRY'
+  };
+
+  window.loadStoreSettings = async () => {
+    try {
+      const { doc: _d, getDoc } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
+      const uid = window._auth?.currentUser?.uid;
+      if(!uid) return;
+      const snap = await getDoc(_d(window._db, 'storeSettings', uid));
+      if(snap.exists()) {
+        window._storeSettings = { ...window._storeSettings, ...snap.data() };
+      }
+      applyCashierSettings();
+    } catch(e) { console.warn('loadStoreSettings:', e); }
+  };
+
+  window.applyCashierSettings = () => {
+    const s = window._storeSettings;
+
+    // 1) الدين — إخفاء/إظهار زر الدين
+    const debtBtn = document.getElementById('payBtn-debt');
+    if(debtBtn) {
+      debtBtn.style.display = s.allowDebt ? '' : 'none';
+      if(!s.allowDebt) {
+        const curMethod = document.getElementById('selectedPayMethod')?.value;
+        if(curMethod === 'debt') selectPayMethod('cash');
+      }
+    }
+
+    // 2) POS — إخفاء/إظهار زر POS
+    const posBtn = document.getElementById('payBtn-pos');
+    if(posBtn) {
+      posBtn.style.display = s.posEnabled ? '' : 'none';
+      if(!s.posEnabled) {
+        const curMethod = document.getElementById('selectedPayMethod')?.value;
+        if(curMethod === 'pos') selectPayMethod('cash');
+      }
+    }
+
+    // 3) المرتجعات — إخفاء/إظهار تبويب الإعادة
+    const returnTab = document.querySelector('.tab[onclick*="return"]');
+    if(returnTab) returnTab.style.display = s.allowReturns ? '' : 'none';
+
+    // 4) إخفاء الأرباح عن الكاشير
+    const profitItem = document.getElementById('qProfit')?.closest('.sum-item');
+    if(profitItem) profitItem.style.display = s.hideProfitCashier ? 'none' : '';
+
+    // 5) POS summary row
+    updatePosSummaryRow();
+
+    // 6) اسم المحل في الـ topbar
+    const storeNameEl = document.getElementById('cashierStoreName');
+    if(storeNameEl && s.storeName) storeNameEl.textContent = s.storeName;
+
+    // 7) عملة العرض — تحديث رموز العملة في واجهة الكاشير
+    const isTRY = (s.displayCurrency || 'TRY') === 'TRY';
+    const curSym = isTRY ? '₺' : '$';
+    const discSymEl = document.getElementById('discountCurSym');
+    if(discSymEl) discSymEl.textContent = curSym;
+    // تحديث label مربع الخصم ليعكس العملة المختارة
+    const discLabelEl = document.getElementById('discountCurLabel');
+    if(discLabelEl) discLabelEl.textContent = `التخفيض (اختياري) — ${isTRY ? 'ليرة' : 'دولار'}`;
+    // تحديث حقول الأسعار المعروضة إن كان منتج محدد
+    if(window.updateQuickSale) window.updateQuickSale();
+  };
+
+  window.updatePosSummaryRow = () => {
+    const s = window._storeSettings;
+    let posRow = document.getElementById('pos-fee-summary');
+    if(s.posEnabled && s.posFee > 0) {
+      if(!posRow) {
+        const summaryBar = document.querySelector('.sale-summary-bar');
+        if(summaryBar) {
+          posRow = document.createElement('div');
+          posRow.id = 'pos-fee-summary';
+          posRow.className = 'sum-item';
+          posRow.style.cssText = 'border-top:1px dashed var(--c-border);padding-top:10px;margin-top:4px;grid-column:1/-1';
+          posRow.innerHTML = `<div class="sum-label"><i class="ti ti-credit-card" style="font-size:11px;color:#60A5FA;margin-left:3px"></i>رسوم POS (${s.posFee}%)</div><div class="sum-val" id="qPosFee" style="color:#60A5FA;font-size:14px">$0.00</div>`;
+          summaryBar.appendChild(posRow);
+        }
+      } else {
+        posRow.querySelector('.sum-label').innerHTML = `<i class="ti ti-credit-card" style="font-size:11px;color:#60A5FA;margin-left:3px"></i>رسوم POS (${s.posFee}%)`;
+        posRow.style.display = '';
+      }
+    } else if(posRow) {
+      posRow.style.display = 'none';
+    }
+  };
+
+  // ===== دوال الإعادة (المرتجعات) =====
+  window.openReturnModal = () => {
+    const products = window.state?.products || [];
+    if(!products.length){ window.showToast('لا توجد منتجات','error'); return; }
+    const opts = products.map(p =>
+      `<option value="${p.id}">${p.name} — متاح: ${p.qty}</option>`
+    ).join('');
+    window.setModal(`
+      <div class="modal-hdr">
+        <div class="modal-title"><i class="ti ti-arrow-back-up" style="color:#A78BFA;margin-left:6px"></i> تسجيل إعادة (مرتجع)</div>
+        <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:700;color:var(--c-text2);margin-bottom:6px;display:block">المنتج المُعاد</label>
+        <select id="retProductId" style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-family:'Cairo',sans-serif;font-size:14px">
+          <option value="">-- اختر منتجاً --</option>
+          ${opts}
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--c-text2);margin-bottom:6px;display:block">الكمية المُعادة</label>
+          <input type="number" id="retQty" value="1" min="1"
+            style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-family:'Cairo',sans-serif;font-size:14px;font-weight:700">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--c-text2);margin-bottom:6px;display:block">السبب (اختياري)</label>
+          <input type="text" id="retReason" placeholder="مثال: عيب مصنعي"
+            style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-family:'Cairo',sans-serif;font-size:13px">
+        </div>
+      </div>
+      <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.3);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--c-text3)">
+        <i class="ti ti-info-circle" style="color:#A78BFA;margin-left:4px"></i>
+        سيتم إضافة الكمية إلى المخزون وتسجيل العملية في سجل المبيعات كـ"إعادة"
+      </div>
+      <button class="btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:14px" onclick="submitReturn()">
+        <i class="ti ti-check"></i> تأكيد الإعادة
+      </button>
+    `);
+  };
+
+  window.submitReturn = async () => {
+    if(window._busy){ window.showToast('جاري تنفيذ عملية...','error'); return; }
+    const pid = document.getElementById('retProductId')?.value;
+    if(!pid){ window.showToast('اختر منتجاً','error'); return; }
+    const p = window.state?.products.find(x=>x.id===pid);
+    if(!p){ window.showToast('المنتج غير موجود','error'); return; }
+    const qty = parseInt(document.getElementById('retQty')?.value)||1;
+    if(qty < 1){ window.showToast('الكمية يجب أن تكون 1 على الأقل','error'); return; }
+    const reason = (document.getElementById('retReason')?.value||'').trim() || 'إعادة';
+    const st = window.state;
+    const buyUSD  = p.currency==='usd' ? p.buyPrice : p.buyPrice/(st.rate||32.5);
+    const sellUSD = p.currency==='usd' ? p.sellPrice : p.sellPrice/(st.rate||32.5);
+    const emp = window.state.currentEmployee;
+    const uid = window._auth?.currentUser?.uid;
+    if(!uid){ window.showToast('غير مسجّل الدخول','error'); return; }
+    window.setBusy && window.setBusy(true, 'جاري تسجيل الإعادة...');
+    try {
+      const { collection, addDoc, doc, updateDoc } =
+        await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
+      const retData = {
+        productId: pid,
+        productName: p.name,
+        qty,
+        price: sellUSD,
+        currency: 'usd',
+        type: 'return',
+        customer: reason,
+        date: new Date().toISOString().split('T')[0],
+        cost: buyUSD,
+        createdAt: new Date().toISOString(),
+        userId: uid,
+        employeeId: emp?.id || '',
+        employeeName: emp?.name || ''
+      };
+      await addDoc(collection(window._db, 'sales'), retData);
+      const newQty = p.qty + qty;
+      await updateDoc(doc(window._db, 'products', pid), { qty: newQty });
+      // تحديث المخزون محلياً
+      const idx = window.state.products.findIndex(x=>x.id===pid);
+      if(idx > -1) window.state.products[idx].qty = newQty;
+      window.closeModal();
+      if(window.populateDropdown) window.populateDropdown();
+      if(window.renderSales) window.renderSales();
+      window.showToast(`تم تسجيل إعادة ${qty} قطعة من "${p.name}" وإضافتها للمخزون ✓`, 'success');
+    } catch(e) {
+      window.showToast('خطأ في تسجيل الإعادة: ' + e.message, 'error');
+    } finally {
+      window.setBusy && window.setBusy(false);
+    }
+  };
+
+  // ======= RETURN FROM SALE ROW =======
+  window.openReturnFromSale = (saleId) => {
+    const st = window.state;
+    const sale = st?.sales?.find(s => s.id === saleId);
+    if(!sale){ window.showToast('العملية غير موجودة','error'); return; }
+    const rate = st.rate || 32.5;
+    const total = (sale.price * sale.qty * rate).toFixed(0);
+    window.setModal(`
+      <div class="modal-hdr">
+        <div class="modal-title"><i class="ti ti-arrow-back-up" style="color:#A78BFA;margin-left:6px"></i> ترجيع عملية</div>
+        <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--c-text);margin-bottom:4px">${sale.productName}</div>
+        <div style="display:flex;gap:12px;font-size:12px;color:var(--c-text3)">
+          <span><i class="ti ti-box" style="font-size:12px;vertical-align:-1px;margin-left:3px"></i>الكمية: <b style="color:var(--c-text)">${sale.qty}</b></span>
+          <span><i class="ti ti-currency-lira" style="font-size:12px;vertical-align:-1px;margin-left:3px"></i>₺${total}</span>
+          <span><i class="ti ti-calendar" style="font-size:12px;vertical-align:-1px;margin-left:3px"></i>${sale.date||'—'}</span>
+        </div>
+        ${sale.customer ? `<div style="font-size:12px;color:var(--c-text3);margin-top:4px"><i class="ti ti-user" style="font-size:12px;vertical-align:-1px;margin-left:3px"></i>${sale.customer}</div>` : ''}
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:700;color:var(--c-text2);margin-bottom:6px;display:block"><i class="ti ti-message-circle" style="font-size:12px;vertical-align:-1px;margin-left:4px;color:#A78BFA"></i>سبب الترجيع <span style="color:var(--c-red)">*</span></label>
+        <input type="text" id="retReasonFast" placeholder="مثال: عيب مصنعي، تغيير رأي الزبون..."
+          style="width:100%;padding:11px 14px;border:1.5px solid rgba(167,139,250,0.4);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-family:'Cairo',sans-serif;font-size:14px;box-sizing:border-box;outline:none"
+          onkeydown="if(event.key==='Enter')submitReturnFromSale('${saleId}')">
+      </div>
+      <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px;font-size:12px;color:var(--c-text3)">
+        <i class="ti ti-info-circle" style="color:var(--c-red);margin-left:4px"></i>
+        سيتم إعادة <b style="color:var(--c-text)">${sale.qty} قطعة</b> للمخزون وتسجيل العملية كـ"إعادة"
+      </div>
+      <button class="btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:14px;background:rgba(167,139,250,0.2);border-color:rgba(167,139,250,0.5);color:#A78BFA" onclick="submitReturnFromSale('${saleId}')">
+        <i class="ti ti-check"></i> تأكيد الترجيع
+      </button>
+    `);
+    setTimeout(() => document.getElementById('retReasonFast')?.focus(), 100);
+  };
+
+  window.submitReturnFromSale = async (saleId) => {
+    if(window._busy){ window.showToast('جاري تنفيذ عملية...','error'); return; }
+    const reason = (document.getElementById('retReasonFast')?.value || '').trim();
+    if(!reason){
+      const inp = document.getElementById('retReasonFast');
+      if(inp){ inp.style.borderColor='var(--c-red)'; setTimeout(()=>inp.style.borderColor='rgba(167,139,250,0.4)',1500); }
+      window.showToast('أدخل سبب الترجيع','error'); return;
+    }
+    const st = window.state;
+    const sale = st?.sales?.find(s => s.id === saleId);
+    if(!sale){ window.showToast('العملية غير موجودة','error'); return; }
+    const p = st.products.find(x => x.id === sale.productId);
+    if(!p){ window.showToast('المنتج غير موجود','error'); return; }
+    const uid = window._auth?.currentUser?.uid;
+    if(!uid){ window.showToast('غير مسجّل الدخول','error'); return; }
+    window.setBusy && window.setBusy(true, 'جاري تسجيل الترجيع...');
+    try {
+      const { collection, addDoc, doc, updateDoc } =
+        await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
+      const emp = window.state.currentEmployee;
+      const retData = {
+        productId: sale.productId,
+        productName: sale.productName,
+        qty: sale.qty,
+        price: sale.price,
+        currency: 'usd',
+        type: 'return',
+        customer: reason,
+        date: new Date().toISOString().split('T')[0],
+        cost: sale.cost || 0,
+        createdAt: new Date().toISOString(),
+        userId: uid,
+        employeeId: emp?.id || sale.employeeId || '',
+        employeeName: emp?.name || sale.employeeName || '',
+        originalSaleId: saleId
+      };
+      await addDoc(collection(window._db, 'sales'), retData);
+      const newQty = p.qty + sale.qty;
+      await updateDoc(doc(window._db, 'products', sale.productId), { qty: newQty });
+      const idx = window.state.products.findIndex(x => x.id === sale.productId);
+      if(idx > -1) window.state.products[idx].qty = newQty;
+      window.closeModal();
+      if(window.populateDropdown) window.populateDropdown();
+      if(window.renderSales) window.renderSales();
+      window.showToast(`✓ تم ترجيع ${sale.qty} قطعة من "${sale.productName}" — السبب: ${reason}`, 'success');
+    } catch(e) {
+      window.showToast('خطأ في تسجيل الترجيع: ' + e.message, 'error');
+    } finally {
+      window.setBusy && window.setBusy(false);
+    }
+  };
 </script>
 </head>
 <body>
@@ -494,6 +988,37 @@
   </div>
 </div>
 
+<!-- EMPLOYEE LOGIN -->
+<div id="employeeLoginScreen" style="display:none;position:fixed;inset:0;background:var(--c-bg,#0f0e17);z-index:1000;align-items:center;justify-content:center;padding:24px;font-family:'Cairo',sans-serif">
+  <div class="login-box" style="width:100%;max-width:400px">
+    <div class="login-logo" style="gap:10px;color:#A78BFA">
+      <i class="ti ti-user-circle" style="font-size:30px"></i>
+      <span>دخول الكاشير</span>
+    </div>
+    <div class="login-sub" style="margin-bottom:20px">أدخل اسم المستخدم وكلمة السر</div>
+    <div class="fg">
+      <label>اسم المستخدم</label>
+      <input type="text" id="empLoginUsername" placeholder="username" autocomplete="username"
+        style="direction:ltr;text-align:right"
+        onkeydown="if(event.key==='Enter')document.getElementById('empLoginPass').focus()">
+    </div>
+    <div class="fg">
+      <label>كلمة السر</label>
+      <input type="password" id="empLoginPass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doEmployeeLogin()">
+    </div>
+    <button class="btn-primary" id="empLoginBtn" onclick="doEmployeeLogin()" style="width:100%;justify-content:center;background:linear-gradient(135deg,#7C3AED,#A78BFA);border-color:#7C3AED;">
+      <i class="ti ti-login"></i> دخول
+    </button>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--c-border,rgba(255,255,255,0.08));text-align:center">
+      <button onclick="doLogout()"
+        style="background:transparent;border:1px solid var(--c-border,rgba(255,255,255,0.1));border-radius:10px;padding:9px 20px;cursor:pointer;color:var(--c-text3,rgba(255,255,255,0.4));font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px">
+        <i class="ti ti-logout" style="font-size:14px"></i> تسجيل خروج كامل
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- APP -->
 <div id="appScreen">
 
@@ -501,7 +1026,7 @@
   <div class="cashier-topbar">
     <div class="cashier-logo" style="gap:10px">
       <img src="logo website.png" alt="BatLab" style="width:36px;height:36px;border-radius:10px;object-fit:contain">
-      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px"> BatLab  </span>
+      <span style="font-size:18px;font-weight:800;letter-spacing:-.3px" id="cashierStoreName"> BatLab  </span>
     </div>
 
     <!-- التبويبين الرئيسيين -->
@@ -526,6 +1051,15 @@
         style="padding:6px 8px;background:transparent;border:1px solid var(--c-border);border-radius:8px;cursor:pointer;color:var(--c-text2);font-size:15px;display:flex;align-items:center">
         <i class="ti ti-sun" id="themeIcon"></i>
       </button>
+      <!-- Employee badge -->
+      <div id="empBadgeWrap" style="display:none;align-items:center;gap:6px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.35);border-radius:20px;padding:4px 12px">
+        <i class="ti ti-user-circle" style="font-size:14px;color:#A78BFA"></i>
+        <span id="empNameBadge" style="font-size:12px;font-weight:700;color:#A78BFA;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button onclick="doEmployeeLogout()" title="تغيير الموظف"
+          style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:6px;padding:2px 7px;cursor:pointer;color:#A78BFA;font-size:11px;font-weight:700;font-family:'Cairo',sans-serif;white-space:nowrap">
+          تغيير
+        </button>
+      </div>
       <div class="user-row">
         <div class="user-email" id="userEmail"></div>
         <button class="btn-sm" onclick="doLogout()" title="خروج" style="padding:6px 8px">
@@ -541,7 +1075,7 @@
     <!-- ===== SALE PAGE ===== -->
     <div class="page active" id="page-sale">
 
-      <!-- سعر الدولار -->
+      <!-- سعر الدوt�ار -->
       <div class="card" style="margin-bottom:16px;padding:14px 18px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div style="font-size:11px;color:var(--c-text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">سعر الدولار ₺/$</div>
@@ -631,18 +1165,43 @@
               style="width:100%;padding:14px 10px;border:2px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:26px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box"
               oninput="updateQuickSale()">
           </div>
-          <!-- سعر البيع -->
+          <!-- سعر البيع + التخفيض -->
           <div style="flex:1">
             <div class="sale-form-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px">
               <span><i class="ti ti-tag"></i> سعر البيع</span>
               <span id="quickRefPriceBadge" style="display:none;font-size:11px;font-weight:600;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:12px;padding:2px 9px;white-space:nowrap"></span>
             </div>
-            <div style="display:flex;align-items:center;gap:6px;background:rgba(99,102,241,0.08);border:2px solid rgba(99,102,241,0.45);border-radius:var(--radius-sm);padding:4px 10px">
-              <span style="font-size:22px;font-weight:800;color:var(--c-primary-bright);flex-shrink:0">₺</span>
-              <input type="number" id="quickPriceTRY" placeholder="0"
-                style="flex:1;border:none;outline:none;background:transparent;color:var(--c-text);font-size:34px;font-family:'Cairo',sans-serif;font-weight:800;width:100%;min-width:0;padding:8px 0"
-                oninput="syncQuickPrice('try')">
+
+            <!-- السعر الأصلي (للعرض فقط) -->
+            <div id="origPriceDisplay" style="display:none;align-items:center;justify-content:space-between;background:var(--c-bg3);border:1px solid var(--c-border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:10px">
+              <span style="font-size:12px;color:var(--c-text3);font-weight:600">السعر الأصلي</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <i class="ti ti-lock" style="font-size:12px;color:var(--c-text3)"></i>
+                <span id="origPriceTRYLabel" style="font-size:20px;font-weight:800;color:var(--c-text)">₺0</span>
+              </div>
             </div>
+
+            <!-- حقل التخفيض -->
+            <div style="margin-bottom:10px">
+              <div style="font-size:11px;color:var(--c-amber);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:5px">
+                <i class="ti ti-discount" style="font-size:13px"></i> التخفيض (اختياري)
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.35);border-radius:var(--radius-sm);padding:4px 10px">
+                <span id="discountCurSym" style="font-size:18px;font-weight:800;color:var(--c-amber);flex-shrink:0">₺</span>
+                <input type="number" id="quickDiscountTRY" placeholder="0" min="0"
+                  style="flex:1;border:none;outline:none;background:transparent;color:var(--c-text);font-size:24px;font-family:'Cairo',sans-serif;font-weight:700;width:100%;min-width:0;padding:6px 0"
+                  oninput="applyDiscount()">
+              </div>
+            </div>
+
+            <!-- السعر النهائي (بعد التخفيض) -->
+            <div id="finalPriceDisplay" style="display:none;align-items:center;justify-content:space-between;background:rgba(34,197,94,0.08);border:2px solid rgba(34,197,94,0.35);border-radius:var(--radius-sm);padding:10px 14px">
+              <span style="font-size:12px;color:var(--c-green);font-weight:700">السعر النهائي</span>
+              <span id="finalPriceTRYLabel" style="font-size:26px;font-weight:800;color:var(--c-green)">₺0</span>
+            </div>
+
+            <!-- hidden fields (used by submitQuickSale) -->
+            <input type="hidden" id="quickPriceTRY" value="">
             <input type="hidden" id="quickPriceUSD" value="">
             <div id="quickPriceWarning" style="display:none;margin-top:6px;padding:8px 10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-sm);font-size:12px;color:var(--c-red);font-weight:600"></div>
           </div>
@@ -652,11 +1211,86 @@
         <input type="hidden" id="quickCostUSD">
         <input type="hidden" id="quickCostTRY">
 
-        <!-- الزبون -->
+        <!-- طريقة الدفع -->
+        <div class="sale-form-card" style="margin-bottom:14px">
+          <div class="sale-form-title"><i class="ti ti-credit-card"></i> طريقة الدفع</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px">
+            <button type="button" id="payBtn-cash" onclick="selectPayMethod('cash')"
+              style="padding:10px 4px;border:2px solid var(--c-green);border-radius:10px;background:rgba(16,185,129,0.12);cursor:pointer;color:var(--c-green);font-family:'Cairo',sans-serif;font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s">
+              <i class="ti ti-cash" style="font-size:20px"></i>نقدي
+            </button>
+            <button type="button" id="payBtn-iban" onclick="selectPayMethod('iban')"
+              style="padding:10px 4px;border:1px solid var(--c-border);border-radius:10px;background:var(--c-bg3);cursor:pointer;color:var(--c-text2);font-family:'Cairo',sans-serif;font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s">
+              <i class="ti ti-building-bank" style="font-size:20px"></i>IBAN
+            </button>
+            <button type="button" id="payBtn-pos" onclick="selectPayMethod('pos')"
+              style="padding:10px 4px;border:1px solid var(--c-border);border-radius:10px;background:var(--c-bg3);cursor:pointer;color:var(--c-text2);font-family:'Cairo',sans-serif;font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s">
+              <i class="ti ti-device-mobile" style="font-size:20px"></i>POS
+            </button>
+            <button type="button" id="payBtn-debt" onclick="selectPayMethod('debt')"
+              style="padding:10px 4px;border:1px solid var(--c-border);border-radius:10px;background:var(--c-bg3);cursor:pointer;color:var(--c-text2);font-family:'Cairo',sans-serif;font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s">
+              <i class="ti ti-clock-dollar" style="font-size:20px"></i>دين
+            </button>
+          </div>
+          <input type="hidden" id="selectedPayMethod" value="cash">
+        </div>
+
+        <!-- الزبون — يظهر دائماً -->
         <div style="margin-bottom:14px">
           <div class="sale-form-title"><i class="ti ti-user"></i> اسم الزبون (اختياري)</div>
           <input type="text" id="quickCustomer" placeholder="اسم الزبون"
             style="width:100%;padding:10px 12px;border:0.5px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
+        </div>
+
+        <!-- حقل الدين — يظهر بس لما يختار دين -->
+        <div id="debtFields" style="display:none;margin-bottom:14px;padding:14px;background:rgba(245,158,11,0.07);border:1.5px solid rgba(245,158,11,0.35);border-radius:var(--radius-sm)">
+          <div style="font-size:11px;font-weight:700;color:var(--c-amber);margin-bottom:12px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.05em">
+            <i class="ti ti-clock-dollar"></i> بيانات الدين
+          </div>
+
+          <!-- اسم العميل مع اقتراحات -->
+          <div style="margin-bottom:10px;position:relative">
+            <div style="font-size:12px;color:var(--c-text2);font-weight:600;margin-bottom:5px">اسم العميل <span style="color:var(--c-red)">*</span></div>
+            <input type="text" id="debtCustomerName" placeholder="اسم العميل..."
+              autocomplete="off"
+              style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.4);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;box-sizing:border-box;outline:none"
+              oninput="debtCustomerSearch(this.value)"
+              onfocus="debtCustomerSearch(this.value)"
+              onblur="setTimeout(()=>document.getElementById('debtCustomerDD').style.display='none',180)"
+              onkeydown="debtCustomerKey(event)">
+            <!-- dropdown اقتراحات -->
+            <div id="debtCustomerDD"
+              style="display:none;position:absolute;top:calc(100% + 2px);right:0;left:0;background:var(--c-bg2);border:1px solid rgba(245,158,11,0.35);border-radius:var(--radius-sm);z-index:9999;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)">
+            </div>
+          </div>
+
+          <!-- اسم البائع + رقم الهاتف -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+            <div>
+              <div style="font-size:12px;color:var(--c-text2);font-weight:600;margin-bottom:5px">اسم البائع</div>
+              <input type="text" id="debtSellerName" placeholder="تلقائي..."
+                style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;box-sizing:border-box">
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--c-text2);font-weight:600;margin-bottom:5px">رقم الهاتف <span style="color:var(--c-text3);font-weight:400">(اختياري)</span></div>
+              <input type="tel" id="debtPhone" placeholder="05xx..."
+                style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;box-sizing:border-box;direction:ltr;text-align:right">
+            </div>
+          </div>
+
+          <!-- تاريخ الاستحقاق + وصف -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:12px;color:var(--c-text2);font-weight:600;margin-bottom:5px">تاريخ الاستحقاق <span style="color:var(--c-text3);font-weight:400">(اختياري)</span></div>
+              <input type="date" id="debtDueDate"
+                style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;box-sizing:border-box">
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--c-text2);font-weight:600;margin-bottom:5px">وصف <span style="color:var(--c-text3);font-weight:400">(اختياري)</span></div>
+              <input type="text" id="debtDesc" placeholder="ملاحظة الدين..."
+                style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;box-sizing:border-box">
+            </div>
+          </div>
         </div>
 
         <!-- ملاحظات -->
@@ -673,7 +1307,7 @@
         <span id="qProfit" style="display:none">$0.00</span>
       </div>
 
-      <button class="btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:15px" onclick="submitQuickSale()">
+      <button class="btn-primary" style="justify-content:center;padding:14px;font-size:15px;width:100%" onclick="submitQuickSale()">
         <i class="ti ti-check"></i> تأكيد البيع
       </button>
     </div><!-- /page-sale -->
@@ -753,6 +1387,7 @@
       <div class="tabs">
         <div class="tab active" onclick="filterSales('all',this)">الكل</div>
         <div class="tab" onclick="filterSales('cash',this)">نقدي</div>
+        <div class="tab" onclick="filterSales('pos',this)">POS</div>
         <div class="tab" onclick="filterSales('debt',this)">دين</div>
         <div class="tab" onclick="filterSales('return',this)">إعادة</div>
         <div class="tab" onclick="filterSales('partial',this)">دفعات</div>
@@ -793,37 +1428,83 @@ window.updateQuickSale = () => {
     if(qtyBadge) qtyBadge.style.display='none';
     const refBadge = document.getElementById('quickRefPriceBadge');
     if(refBadge) refBadge.style.display='none';
+    const origDisp = document.getElementById('origPriceDisplay');
+    if(origDisp) origDisp.style.display='none';
+    const finalDisp = document.getElementById('finalPriceDisplay');
+    if(finalDisp) finalDisp.style.display='none';
     return;
   }
   if(qtyBadge){
-    const low   = p.qty < 5;
+    const lowThreshold = window._storeSettings?.lowStockThreshold ?? 5;
+    const low   = p.qty < lowThreshold && p.qty > 0;
     const color = p.qty===0?'var(--c-red)':low?'var(--c-amber)':'var(--c-green)';
     qtyBadge.style.display = 'flex';
     qtyBadge.innerHTML = `<i class="ti ti-package" style="font-size:13px;margin-left:4px"></i> الكمية المتاحة: <b style="color:${color};margin-right:4px">${p.qty}</b>${p.qty===0?'<span style="color:var(--c-red)"> — نفد المخزون</span>':low?'<span style="color:var(--c-amber)"> — مخزون منخفض</span>':''}`;
   }
   const buyUSD  = p.currency==='usd' ? p.buyPrice : p.buyPrice/st.rate;
   const sellUSD = p.currency==='usd' ? p.sellPrice : p.sellPrice/st.rate;
+  const sellTRY = Math.round(sellUSD * st.rate);
   // store cost in hidden fields (used by submitQuickSale)
   document.getElementById('quickCostUSD').value = buyUSD.toFixed(2);
   document.getElementById('quickCostTRY').value = (buyUSD*st.rate).toFixed(0);
-  // show reference price badge
-  const refBadge = document.getElementById('quickRefPriceBadge');
-  if(refBadge){
-    refBadge.style.display = 'inline-flex';
-    refBadge.textContent = `سعر المنتج: ₺${(sellUSD*st.rate).toFixed(0)}`;
-  }
-  document.getElementById('quickPriceTRY').value = (sellUSD*st.rate).toFixed(0);
+  // show original price (locked)
+  const origDisp = document.getElementById('origPriceDisplay');
+  const origLabel = document.getElementById('origPriceTRYLabel');
+  if(origDisp) origDisp.style.display = 'flex';
+  const isTRY_uqs = (window._storeSettings?.displayCurrency || 'TRY') === 'TRY';
+  const dispSym_uqs = isTRY_uqs ? '₺' : '$';
+  const dispVal_uqs = isTRY_uqs ? sellTRY : parseFloat(sellUSD.toFixed(2));
+  if(origLabel) origLabel.textContent = dispSym_uqs + (isTRY_uqs ? dispVal_uqs : dispVal_uqs.toFixed(2));
+  origDisp._origTRY = sellTRY;
+  // reset discount
+  const discEl = document.getElementById('quickDiscountTRY');
+  if(discEl) discEl.value = '';
+  // update discount symbol
+  const dSym = document.getElementById('discountCurSym');
+  if(dSym) dSym.textContent = dispSym_uqs;
+  // set hidden price fields to full sell price (no discount yet)
+  document.getElementById('quickPriceTRY').value = sellTRY;
   const u = document.getElementById('quickPriceUSD');
   if(u) u.value = sellUSD.toFixed(4);
+  // show final price display
+  const finalDisp = document.getElementById('finalPriceDisplay');
+  const finalLabel = document.getElementById('finalPriceTRYLabel');
+  if(finalDisp) finalDisp.style.display = 'flex';
+  if(finalLabel) finalLabel.textContent = dispSym_uqs + (isTRY_uqs ? sellTRY : sellUSD.toFixed(2));
+  // hide old ref badge (not needed anymore)
+  const refBadge = document.getElementById('quickRefPriceBadge');
+  if(refBadge) refBadge.style.display = 'none';
+  recalcSummary();
+};
+
+window.applyDiscount = () => {
+  const st = window.state;
+  if(!st) return;
+  const origDisp = document.getElementById('origPriceDisplay');
+  const origTRY = origDisp?._origTRY || parseFloat(document.getElementById('quickCostTRY')?.value)||0;
+  const discTRY = parseFloat(document.getElementById('quickDiscountTRY')?.value)||0;
+  const finalTRY = Math.max(0, origTRY - discTRY);
+  const finalUSD = finalTRY / (st.rate || 32.5);
+  // Update hidden price fields
+  const priceTRYEl = document.getElementById('quickPriceTRY');
+  const priceUSDEl = document.getElementById('quickPriceUSD');
+  if(priceTRYEl) priceTRYEl.value = finalTRY;
+  if(priceUSDEl) priceUSDEl.value = finalUSD.toFixed(4);
+  // Update final price display
+  const finalDisp = document.getElementById('finalPriceDisplay');
+  const finalLabel = document.getElementById('finalPriceTRYLabel');
+  if(finalDisp) finalDisp.style.display = 'flex';
+  if(finalLabel){
+    const isTRY_ad = (window._storeSettings?.displayCurrency || 'TRY') === 'TRY';
+    finalLabel.textContent = (isTRY_ad ? '₺' : '$') + (isTRY_ad ? Math.round(finalTRY) : finalUSD.toFixed(2));
+    const buyUSD = parseFloat(document.getElementById('quickCostUSD')?.value)||0;
+    finalLabel.style.color = finalUSD <= buyUSD ? 'var(--c-red)' : 'var(--c-green)';
+  }
   recalcSummary();
 };
 
 window.syncQuickPrice = () => {
-  const st = window.state;
-  if(!st) return;
-  const v = parseFloat(document.getElementById('quickPriceTRY')?.value)||0;
-  const u = document.getElementById('quickPriceUSD');
-  if(u) u.value = v ? (v/st.rate).toFixed(4) : '';
+  // kept for backward compat — price is now controlled by applyDiscount
   recalcSummary();
 };
 
@@ -839,14 +1520,30 @@ function recalcSummary(){
   const profit = (priceUSD-buyUSD)*qty;
   setText('qTotal','$'+total.toFixed(2));
   setText('qTotalTRY','₺'+(total*st.rate).toFixed(0));
+  // POS fee
+  const s = window._storeSettings || {};
+  const posFeeEl = document.getElementById('qPosFee');
+  let posFeeAmt = 0;
+  if(posFeeEl && s.posEnabled && s.posFee > 0) {
+    posFeeAmt = total * s.posFee / 100;
+    posFeeEl.textContent = '$' + posFeeAmt.toFixed(2);
+  }
+  const curMethod = document.getElementById('selectedPayMethod')?.value || 'cash';
+  const isPos = curMethod === 'pos';
+  const netProfit = isPos ? profit - posFeeAmt : profit;
   const profEl = document.getElementById('qProfit');
-  if(profEl){ profEl.textContent=(profit>=0?'+':'')+'$'+profit.toFixed(2); profEl.style.color=profit>=0?'var(--c-green)':'var(--c-red)'; }
+  if(profEl){ profEl.textContent=(netProfit>=0?'+':'')+'$'+netProfit.toFixed(2); profEl.style.color=netProfit>=0?'var(--c-green)':'var(--c-red)'; }
+  // تحذير حد أدنى سعر البيع
   const warnEl = document.getElementById('quickPriceWarning');
-  if(warnEl && p && priceUSD>0){
-    if(priceUSD<=buyUSD){
-      const diff=((buyUSD-priceUSD)*st.rate).toFixed(0);
+  if(warnEl && p && priceUSD>0 && s.blockBelowCost !== false){
+    const sellUSD_w = p.currency==='usd' ? p.sellPrice : p.sellPrice/st.rate;
+    const minMarginTRY_w = s.minMarginTRY || 0;
+    const sellTRY_w = sellUSD_w * st.rate;
+    const priceTRY_w = priceUSD * st.rate;
+    const minAllowed_w = Math.max(0, sellTRY_w - minMarginTRY_w);
+    if(priceTRY_w < minAllowed_w){
       warnEl.style.display='block';
-      warnEl.innerHTML=`<i class="ti ti-alert-triangle"></i> أخي هالسعر ما بينفع! عم تبيع بخسارة ₺${diff}`;
+      warnEl.innerHTML=`<i class="ti ti-alert-triangle"></i> أقل من الحد — لا يُباع بأقل من ₺${minAllowed_w.toFixed(0)} (سعر البيع ₺${sellTRY_w.toFixed(0)} − خصم ₺${minMarginTRY_w})`;
     } else { warnEl.style.display='none'; }
   } else if(warnEl){ warnEl.style.display='none'; }
 }
@@ -979,6 +1676,14 @@ window.startCameraScanner = async () => {
   }
 };
 
+window.stopCameraScanner = () => {
+  if(_zxingReader){ try{ _zxingReader.reset(); }catch(e){} _zxingReader=null; }
+  const wrap  = document.getElementById('cameraScannerWrap');
+  const video = document.getElementById('scannerVideo');
+  if(wrap)  wrap.style.display = 'none';
+  if(video && video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
+};
+
 // ======= CASHIER NAME SEARCH =======
 var _csIdx = -1;
 
@@ -986,7 +1691,7 @@ window.cashierFilterByName = function(val) {
   var dd = document.getElementById('cashierNameDD');
   if (!dd || !window.state) return;
   var q = (val || '').trim().toLowerCase();
-  var products = window.state.products || [];
+  var products = window.getEmployeeProducts ? window.getEmployeeProducts() : (window.state.products || []);
   var filtered = q.length === 0
     ? products.slice(0, 50)
     : products.filter(function(p){ return p.name && p.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 50);
@@ -1037,7 +1742,8 @@ window._csSelect = function(pid) {
   var sel = document.getElementById('quickProduct');
   var inp = document.getElementById('cashierNameSearch');
   if (sel) { sel.value = pid; updateQuickSale(); }
-  var p = (window.state && window.state.products ? window.state.products : []).find(function(x){ return x.id === pid; });
+  var allProds = (window.state && window.state.products ? window.state.products : []);
+  var p = allProds.find(function(x){ return x.id === pid; });
   if (inp && p) inp.value = p.name;
   window.cashierHideDD();
   if (p) showToast('✓ ' + p.name, 'success');
@@ -1075,6 +1781,188 @@ window.submitQuickSale = async function() {
   if (inp) inp.value = '';
   window.cashierHideDD();
 };
+
+// ======= DEBT CUSTOMER AUTOCOMPLETE =======
+var _dcIdx = -1;
+
+// جيب أسماء العملاء الفريدة من سجل الديون
+function getDebtCustomers() {
+  var sales = (window.state && window.state.sales) ? window.state.sales : [];
+  var names = {};
+  sales.filter(function(s){ return s.type === 'debt' && s.customer; }).forEach(function(s){
+    var key = s.customer.trim().toLowerCase();
+    if(!names[key]) names[key] = { name: s.customer.trim(), phone: s.phone || '', count: 0 };
+    names[key].count++;
+    if(s.phone && !names[key].phone) names[key].phone = s.phone;
+  });
+  return Object.values(names).sort(function(a,b){ return b.count - a.count; });
+}
+
+window.debtCustomerSearch = function(val) {
+  var dd = document.getElementById('debtCustomerDD');
+  if(!dd) return;
+  var q = (val || '').trim().toLowerCase();
+  var all = getDebtCustomers();
+  var filtered = q.length === 0
+    ? all.slice(0, 8)
+    : all.filter(function(c){ return c.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 8);
+
+  if(!filtered.length) { dd.style.display = 'none'; return; }
+
+  dd.innerHTML = filtered.map(function(c, i){
+    return "<div data-idx='" + i + "' data-name='" + c.name.replace(/'/g,"&#39;") + "' data-phone='" + (c.phone||'').replace(/'/g,"&#39;") + "'"
+      + " onmousedown='window._dcSelect(\"" + c.name.replace(/"/g,'&quot;') + "\",\"" + (c.phone||'').replace(/"/g,'&quot;') + "\")'"
+      + " onmouseover='window._dcHover(" + i + ")'"
+      + " style='display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(245,158,11,0.12);font-family:Cairo,sans-serif;gap:8px' id='dc-item-" + i + "'>"
+      + "<div style='display:flex;align-items:center;gap:8px'>"
+      + "<div style='width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--c-amber);flex-shrink:0'>" + c.name[0].toUpperCase() + "</div>"
+      + "<span style='font-size:13px;font-weight:600;color:var(--c-text)'>" + c.name + "</span>"
+      + "</div>"
+      + (c.phone ? "<span style='font-size:11px;color:var(--c-text3);direction:ltr'>" + c.phone + "</span>" : '')
+      + "</div>";
+  }).join('');
+  dd.style.display = 'block';
+  _dcIdx = -1;
+};
+
+window._dcHover = function(i) {
+  var dd = document.getElementById('debtCustomerDD');
+  if(!dd) return;
+  dd.querySelectorAll('[data-idx]').forEach(function(el){ el.style.background = ''; });
+  var item = dd.querySelector('[data-idx="' + i + '"]');
+  if(item) { item.style.background = 'rgba(245,158,11,0.1)'; _dcIdx = i; }
+};
+
+window._dcSelect = function(name, phone) {
+  var inp = document.getElementById('debtCustomerName');
+  var phoneInp = document.getElementById('debtPhone');
+  if(inp) inp.value = name;
+  // امأل الهاتف تلقائياً لو ما عنده قيمة
+  if(phoneInp && phone && !phoneInp.value) phoneInp.value = phone;
+  var dd = document.getElementById('debtCustomerDD');
+  if(dd) dd.style.display = 'none';
+  _dcIdx = -1;
+};
+
+window.debtCustomerKey = function(e) {
+  var dd = document.getElementById('debtCustomerDD');
+  if(!dd || dd.style.display === 'none') return;
+  var items = dd.querySelectorAll('[data-idx]');
+  if(!items.length) return;
+  if(e.key === 'ArrowDown') {
+    e.preventDefault();
+    _dcIdx = Math.min(_dcIdx + 1, items.length - 1);
+    items.forEach(function(el, i){ el.style.background = i === _dcIdx ? 'rgba(245,158,11,0.1)' : ''; });
+    if(items[_dcIdx]) items[_dcIdx].scrollIntoView({ block: 'nearest' });
+  } else if(e.key === 'ArrowUp') {
+    e.preventDefault();
+    _dcIdx = Math.max(_dcIdx - 1, 0);
+    items.forEach(function(el, i){ el.style.background = i === _dcIdx ? 'rgba(245,158,11,0.1)' : ''; });
+    if(items[_dcIdx]) items[_dcIdx].scrollIntoView({ block: 'nearest' });
+  } else if(e.key === 'Enter' && _dcIdx >= 0) {
+    e.preventDefault();
+    var item = items[_dcIdx];
+    if(item) window._dcSelect(item.getAttribute('data-name'), item.getAttribute('data-phone'));
+  } else if(e.key === 'Escape') {
+    dd.style.display = 'none';
+  }
+};
+
+// ======= RETURN MODAL =======
+window.openReturnModal = function() {
+  const products = (window.state && window.state.products) ? window.state.products : [];
+  if(!products.length){ window.showToast('لا توجد منتجات', 'error'); return; }
+
+  const opts = products.map(p =>
+    `<option value="${p.id}">${p.name} (متاح: ${p.qty})</option>`
+  ).join('');
+
+  window.setModal(`
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-arrow-back-up" style="color:#A78BFA;margin-left:6px"></i>تسجيل إعادة مرتجع</div>
+      <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700;color:var(--c-text3);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">المنتج</label>
+      <select id="retProduct"
+        style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif">
+        <option value="">-- اختر المنتج --</option>
+        ${opts}
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--c-text3);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">الكمية المُعادة</label>
+        <input type="number" id="retQty" value="1" min="1"
+          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:16px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--c-text3);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">سعر الإعادة (₺)</label>
+        <input type="number" id="retPriceTRY" placeholder="0" min="0" step="1"
+          style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:16px;font-family:'Cairo',sans-serif;font-weight:700;text-align:center;box-sizing:border-box">
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700;color:var(--c-text3);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">اسم الزبون (اختياري)</label>
+      <input type="text" id="retCustomer" placeholder="اسم الزبون..."
+        style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;box-sizing:border-box">
+    </div>
+    <div style="padding:10px 14px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:var(--radius-sm);font-size:12px;color:var(--c-text3);margin-bottom:16px">
+      <i class="ti ti-info-circle" style="color:#A78BFA;margin-left:5px"></i>
+      الإعادة ستُعيد الكمية للمخزون وتُسجَّل في سجل المبيعات كـ "إعادة"
+    </div>
+    <button onclick="submitReturn()"
+      style="width:100%;padding:13px;background:rgba(167,139,250,0.2);border:1.5px solid rgba(167,139,250,0.5);border-radius:var(--radius-sm);cursor:pointer;color:#A78BFA;font-family:'Cairo',sans-serif;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px">
+      <i class="ti ti-arrow-back-up" style="font-size:18px"></i> تأكيد الإعادة
+    </button>
+  `);
+};
+
+window.submitReturn = async function() {
+  if(window._busy){ window.showToast('جاري تنفيذ عملية، انتظر...', 'error'); return; }
+  const pid = document.getElementById('retProduct')?.value;
+  const p = (window.state?.products || []).find(x=>x.id===pid);
+  if(!p){ window.showToast('اختر منتجاً', 'error'); return; }
+  const qty = parseInt(document.getElementById('retQty')?.value)||1;
+  const priceTRY = parseFloat(document.getElementById('retPriceTRY')?.value)||0;
+  const priceUSD = priceTRY > 0 ? priceTRY / (window.state.rate||32.5)
+                                 : (p.currency==='usd' ? p.sellPrice : p.sellPrice/(window.state.rate||32.5));
+  const buyUSD = p.currency==='usd' ? p.buyPrice : p.buyPrice/(window.state.rate||32.5);
+  const customer = (document.getElementById('retCustomer')?.value||'').trim();
+  const emp = window.state?.currentEmployee;
+  const saleData = {
+    productId: pid, productName: p.name, qty, price: priceUSD,
+    currency: 'usd', type: 'return',
+    customer,
+    date: new Date().toISOString().split('T')[0],
+    cost: buyUSD,
+    createdAt: new Date().toISOString(),
+    userId: window._auth?.currentUser?.uid || '',
+    employeeId: emp?.id || '',
+    employeeName: emp?.name || ''
+  };
+  window.setBusy(true, 'جاري تسجيل الإعادة...');
+  try {
+    const { collection: col, addDoc: add, doc: docRef, updateDoc: upd }
+      = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
+    const db = window._db;
+    const uid = window._auth?.currentUser?.uid;
+    const retRef = await add(col(db,'sales'), saleData);
+    const newQty = p.qty + qty;
+    await upd(docRef(db,'products',pid), { qty: newQty });
+    // حدّث state
+    const pIdx = window.state.products.findIndex(x=>x.id===pid);
+    if(pIdx>-1) window.state.products[pIdx].qty = newQty;
+    if(!window.state.sales) window.state.sales = [];
+    window.state.sales.unshift({ ...saleData, id: retRef.id });
+    window.closeModal();
+    if(window.renderSales) window.renderSales();
+    if(window.populateDropdown) window.populateDropdown();
+    window.showToast(`✓ تم تسجيل إعادة ${qty} قطعة من ${p.name} وزيادة المخزون`, 'success');
+  } catch(e){ window.showToast('خطأ: '+e.message, 'error'); }
+  finally { window.setBusy(false); }
+};
+
 </script>
 </body>
 </html>

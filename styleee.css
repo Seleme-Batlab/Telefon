@@ -45,9 +45,10 @@ body::before{
 
 /* ====== LAYOUT ====== */
 #appScreen{display:none;min-height:100vh}
+
 .app-layout{display:flex;
   min-height:100vh;
-      flex: 1;
+  flex: 1;
 }
 
 /* ====== SIDEBAR ====== */

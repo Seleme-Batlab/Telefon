@@ -371,29 +371,10 @@
       debtDueDate  = (document.getElementById('debtDueDate')?.value||'').trim();
       debtDesc     = (document.getElementById('debtDesc')?.value||'').trim();
       if(!debtCustomer){ showToast('أدخل اسم العميل للدين','error'); return; }
-      // فحص حد الدين الأقصى (المقارنة بالليرة التركية)
-      const maxDebt_cs = window._storeSettings?.maxDebtPerCustomer || 0;
-      if(maxDebt_cs > 0 && window.state?.sales) {
-        const existDebt_cs = window.state.sales
-          .filter(s=>s.type==='debt'&&(s.customer===debtCustomer||s.debtCustomer===debtCustomer))
-          .reduce((a,s)=>a+s.price*(s.qty||1),0);
-        const partials_cs = window.state.sales
-          .filter(s=>s.type==='partial'&&s.customer===debtCustomer)
-          .reduce((a,s)=>a+s.price,0);
-        const priceUSD_cs = parseFloat(document.getElementById('quickPriceUSD')?.value)||0;
-        const qty_cs = parseInt(document.getElementById('quickQty')?.value)||1;
-        const netDebt_cs = existDebt_cs - partials_cs + priceUSD_cs * qty_cs;
-        const rate_cs = window.state.rate || 32.5;
-        const netDebtTRY_cs = netDebt_cs * rate_cs;
-        if(netDebtTRY_cs > maxDebt_cs){
-          showToast(`⚠️ تجاوز حد الدين (₺${maxDebt_cs.toFixed(0)}) — رصيد ${debtCustomer}: ₺${((existDebt_cs-partials_cs)*rate_cs).toFixed(0)}`,'error');
-          return;
-        }
-      }
     }
 
     const emp = window.state.currentEmployee;
-    const saleType = payMethod === 'debt' ? 'debt' : payMethod === 'pos' ? 'pos' : 'cash';
+    const saleType = payMethod === 'debt' ? 'debt' : payMethod === 'pos' ? 'pos' : payMethod === 'iban' ? 'iban' : 'cash';
     // حساب عمولة POS
     const s_cfg = window._storeSettings || {};
     const isPosPay = saleType === 'pos';
@@ -521,6 +502,7 @@
     const st = window.state;
     const emp = st.currentEmployee;
     const filter = st.saleFilter;
+    const hideProfit = (window._storeSettings || {}).hideProfitCashier || false;
     // بس مبيعات الموظف الحالي
     const empSales = emp
       ? st.sales.filter(s => s.employeeId === emp.id)
@@ -528,11 +510,13 @@
     const list = empSales.filter(s=>filter==='all'||s.type===filter);
     const el     = document.getElementById('salesList');
     if(!el) return;
-    const typeLabelMap = {cash:'نقدي',pos:'POS',debt:'دين',partial:'دفعة',return:'إعادة',waste:'هدر'};
-    const typeBadgeMap = {cash:'badge-g',pos:'badge-b',debt:'badge-a',partial:'badge-b',return:'badge-p',waste:'badge-r'};
-    const typeIconMap  = {cash:'ti-cash',pos:'ti-device-mobile',debt:'ti-clock-dollar',partial:'ti-coin',return:'ti-arrow-back-up',waste:'ti-trash'};
+    const typeLabelMap = {cash:'نقدي',iban:'IBAN',pos:'POS',debt:'دين',partial:'دفعة',return:'إعادة',waste:'هدر'};
+    const typeBadgeMap = {cash:'badge-g',iban:'badge-b',pos:'badge-b',debt:'badge-a',partial:'badge-b',return:'badge-p',waste:'badge-r'};
+    const typeIconMap  = {cash:'ti-cash',iban:'ti-building-bank',pos:'ti-device-mobile',debt:'ti-clock-dollar',partial:'ti-coin',return:'ti-arrow-back-up',waste:'ti-trash'};
     const payMethodLabel = {cash:'نقدي',iban:'IBAN',pos:'POS',debt:'دين'};
     const payMethodIcon  = {cash:'ti-cash',iban:'ti-building-bank',pos:'ti-device-mobile',debt:'ti-clock-dollar'};
+    // أعد تحديث قسم الفواتير لو كان مفتوح
+    if(window.renderInvoices && window.state.activePage === 'invoices') window.renderInvoices();
     el.innerHTML = list.length ? list.map(s=>{
       const total   = s.price*s.qty;
       const buyUSD  = s.cost||0;
@@ -546,7 +530,7 @@
       const pmLabel = payMethodLabel[pm] || label;
       const pmIcon  = payMethodIcon[pm]  || icon;
       return `
-      <div class="card" style="margin-bottom:14px;padding:20px;border-right:4px solid ${s.type==='cash'?'var(--c-green)':s.type==='debt'?'var(--c-amber)':s.type==='partial'?'var(--c-primary)':s.type==='return'?'#A78BFA':'var(--c-red)'}">
+      <div class="card" style="margin-bottom:14px;padding:20px;border-right:4px solid ${s.type==='cash'?'var(--c-green)':s.type==='iban'?'var(--c-primary)':s.type==='debt'?'var(--c-amber)':s.type==='partial'?'var(--c-primary)':s.type==='return'?'#A78BFA':'var(--c-red)'}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="width:42px;height:42px;border-radius:10px;background:var(--c-bg3);border:1px solid var(--c-border);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--c-text2)">
@@ -575,6 +559,7 @@
             <div style="font-size:13px;font-weight:600">${s.date||'—'}</div>
           </div>
         </div>
+        ${!hideProfit ? `<div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;font-size:12px;background:rgba(34,197,94,0.07);padding:6px 10px;border-radius:var(--radius-sm);border:1px solid rgba(34,197,94,0.2)"><span style="color:var(--c-text3);display:flex;align-items:center;gap:4px"><i class="ti ti-trending-up" style="font-size:12px;color:var(--c-green)"></i>الربح</span><span style="color:${profit>=0?'var(--c-green)':'var(--c-red)'};font-weight:700">${profit>=0?'+':''}$${profit.toFixed(2)}</span></div>` : ''}
         ${s.type==='pos' && posComm > 0 ? `<div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;font-size:12px;background:rgba(96,165,250,0.08);padding:6px 10px;border-radius:var(--radius-sm);border:1px solid rgba(96,165,250,0.2)"><span style="color:var(--c-text3);display:flex;align-items:center;gap:4px"><i class="ti ti-credit-card" style="font-size:12px;color:#60A5FA"></i>عمولة POS</span><span style="color:#60A5FA;font-weight:700">-$${posComm.toFixed(2)}</span></div>` : ''}
         ${s.customer?`<div style="margin-top:10px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--c-text2);background:rgba(59,130,246,0.08);padding:6px 10px;border-radius:var(--radius-sm);border:1px solid rgba(59,130,246,0.15)"><i class="ti ti-user" style="font-size:14px;color:var(--c-primary-bright)"></i> ${s.customer}</div>`:''}
         ${s.type==='debt'&&(s.debtCustomer||s.debtSeller)?`
@@ -589,12 +574,74 @@
           <button class="btn-sm" style="flex:1;justify-content:center;padding:8px" onclick="openEditSaleModal('${s.id}')">
             <i class="ti ti-edit"></i> تعديل
           </button>
-          ${(s.type !== 'return' && s.type !== 'partial') ? `<button class="btn-sm" style="flex:1;justify-content:center;padding:8px;background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.45);color:#A78BFA" onclick="openReturnFromSale('${s.id}')">
+          ${(s.type !== 'return' && s.type !== 'partial' && (window._storeSettings?.allowReturns !== false)) ? `<button class="btn-sm" style="flex:1;justify-content:center;padding:8px;background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.45);color:#A78BFA" onclick="openReturnFromSale('${s.id}')">
             <i class="ti ti-arrow-back-up"></i> ترجيع
           </button>` : ''}
         </div>
       </div>`;
     }).join('') : `<div class="empty"><i class="ti ti-receipt"></i><p>لا توجد مبيعات</p></div>`;
+  };
+
+  // ======= INVOICES (مخصصة للموظف الحالي - مرتبة من الأقدم للأحدث) =======
+  window.renderInvoices = () => {
+    const st = window.state;
+    const emp = st.currentEmployee;
+    const empSales = emp
+      ? st.sales.filter(s => s.employeeId === emp.id)
+      : st.sales;
+    const sorted = [...empSales].sort((a, b) => {
+      const ta = a.createdAt || a.date || '';
+      const tb = b.createdAt || b.date || '';
+      return ta.localeCompare(tb);
+    });
+    const el = document.getElementById('invoicesList');
+    if (!el) return;
+    const typeLabelMap = {cash:'نقدي',iban:'IBAN',pos:'POS',debt:'دين',partial:'دفعة',return:'إعادة',waste:'هدر'};
+    const typeBadgeMap = {cash:'badge-g',iban:'badge-b',pos:'badge-b',debt:'badge-a',partial:'badge-b',return:'badge-p',waste:'badge-r'};
+    const typeIconMap  = {cash:'ti-cash',iban:'ti-building-bank',pos:'ti-device-mobile',debt:'ti-clock-dollar',partial:'ti-coin',return:'ti-arrow-back-up',waste:'ti-trash'};
+    const _thS = 'padding:9px 14px;font-size:10px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;border-bottom:1px solid var(--c-border)';
+    const _tdS = 'padding:9px 14px;font-size:13px;border-bottom:1px solid var(--c-border);vertical-align:middle';
+    el.innerHTML = sorted.length ? `
+    <div style="overflow-x:auto;border:1px solid var(--c-border);border-radius:var(--radius)">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--c-bg3)">
+        <th style="${_thS};text-align:right">#</th>
+        <th style="${_thS};text-align:right">المنتج</th>
+        <th style="${_thS};text-align:center">النوع</th>
+        <th style="${_thS};text-align:center">الكمية</th>
+        <th style="${_thS};text-align:center">المبلغ</th>
+        <th style="${_thS};text-align:center">الزبون</th>
+        <th style="${_thS};text-align:center">التاريخ</th>
+        <th style="${_thS};text-align:center">فاتورة</th>
+      </tr></thead>
+      <tbody>` + sorted.map((s, i) => {
+      const total = s.price * s.qty;
+      const badgeCls = typeBadgeMap[s.type] || 'badge-b';
+      const label = typeLabelMap[s.type] || s.type;
+      const icon = typeIconMap[s.type] || 'ti-receipt';
+      const typeColor = s.type==='cash'?'var(--c-green)':s.type==='iban'?'var(--c-primary)':s.type==='pos'?'#A78BFA':s.type==='debt'?'var(--c-amber)':s.type==='return'?'#A78BFA':'var(--c-red)';
+      return `<tr style="border-right:3px solid ${typeColor}" onmouseover="this.style.background='rgba(59,130,246,0.04)'" onmouseout="this.style.background=''">
+        <td style="${_tdS};text-align:right;color:var(--c-text3);font-size:11px">${i+1}</td>
+        <td style="${_tdS};text-align:right;font-weight:700">${s.productName}</td>
+        <td style="${_tdS};text-align:center"><span class="badge ${badgeCls}" style="font-size:10px"><i class="ti ${icon}" style="font-size:11px;vertical-align:-1px;margin-left:3px"></i>${label}</span></td>
+        <td style="${_tdS};text-align:center;font-weight:700">${s.qty}</td>
+        <td style="${_tdS};text-align:center">
+          <div style="font-weight:700">$${total.toFixed(2)}</div>
+          <div style="font-size:11px;color:var(--c-text3)">₺${(total*st.rate).toFixed(0)}</div>
+        </td>
+        <td style="${_tdS};text-align:center;font-size:12px;color:var(--c-text2)">${s.customer||'—'}</td>
+        <td style="${_tdS};text-align:center;font-size:12px;color:var(--c-text2)">
+          <div>${s.date||'—'}</div>
+          ${s.createdAt?`<div style="font-size:10px;color:var(--c-text3)">${new Date(s.createdAt).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'})}</div>`:''}
+        </td>
+        <td style="${_tdS};text-align:center">
+          <button class="btn-sm" style="padding:5px 9px;font-size:11px;background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);color:#22c55e" onclick="printSaleInvoice('${s.id}')">
+            <i class="ti ti-printer"></i> طباعة
+          </button>
+        </td>
+      </tr>`;
+    }).join('') + `</tbody></table></div>`
+    : `<div class="empty"><i class="ti ti-receipt"></i><p>لا توجد فواتير بعد</p></div>`;
   };
 
   // ======= FILTER =======
@@ -660,6 +707,7 @@
     document.querySelectorAll('.topbar-tab').forEach(b=>{
       b.classList.toggle('active', b.dataset.page===id);
     });
+    if(id === 'invoices' && window.renderInvoices) window.renderInvoices();
   };
 
   setTimeout(()=>{ const inp=document.getElementById('rateInput'); if(inp) inp.value=window.state.rate.toFixed(2); },300);
@@ -678,16 +726,19 @@
     lowStockThreshold: 5,
     blockZeroStock: true,
     storeName: '',
+    storeAddress: '',
     hideProfitCashier: false,
     displayCurrency: 'TRY'
   };
 
   window.loadStoreSettings = async () => {
     try {
-      const { doc: _d, getDoc } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
+      const { doc: _d, getDoc, getDocFromServer } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
       const uid = window._auth?.currentUser?.uid;
       if(!uid) return;
-      const snap = await getDoc(_d(window._db, 'storeSettings', uid));
+      let snap;
+      try { snap = await getDocFromServer(_d(window._db, 'storeSettings', uid)); }
+      catch(e) { snap = await getDoc(_d(window._db, 'storeSettings', uid)); }
       if(snap.exists()) {
         window._storeSettings = { ...window._storeSettings, ...snap.data() };
       }
@@ -718,13 +769,13 @@
       }
     }
 
-    // 3) المرتجعات — إخفاء/إظهار تبويب الإعادة
+    // 3) المرتجعات — إخفاء/إظهار تبويب الإعادة وزر الترجيع في الكروت
     const returnTab = document.querySelector('.tab[onclick*="return"]');
     if(returnTab) returnTab.style.display = s.allowReturns ? '' : 'none';
-
+    if(window.renderSales) window.renderSales();
     // 4) إخفاء الأرباح عن الكاشير
-    const profitItem = document.getElementById('qProfit')?.closest('.sum-item');
-    if(profitItem) profitItem.style.display = s.hideProfitCashier ? 'none' : '';
+    const profitItem = document.getElementById('profitSumItem');
+    if(profitItem) profitItem.style.display = s.hideProfitCashier ? 'none' : 'flex';
 
     // 5) POS summary row
     updatePosSummaryRow();
@@ -1040,6 +1091,9 @@
       <button class="topbar-tab" data-page="sales" onclick="showPage('sales')">
         <i class="ti ti-receipt"></i> سجل المبيعات
       </button>
+      <button class="topbar-tab" data-page="invoices" onclick="showPage('invoices')">
+        <i class="ti ti-file-invoice"></i> الفواتير
+      </button>
     </div>
 
     <!-- مؤشر مباشر -->
@@ -1304,7 +1358,11 @@
         <!-- hidden vals kept for internal calc -->
         <span id="qTotal" style="display:none">$0.00</span>
         <span id="qTotalTRY" style="display:none">₺0</span>
-        <span id="qProfit" style="display:none">$0.00</span>
+        <!-- profit row — shown/hidden by hideProfitCashier setting -->
+        <div class="sum-item" id="profitSumItem" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:var(--radius-sm);margin-top:8px">
+          <span style="font-size:12px;color:var(--c-text3);display:flex;align-items:center;gap:5px"><i class="ti ti-trending-up" style="font-size:13px;color:var(--c-green)"></i>الربح</span>
+          <span id="qProfit" style="font-size:14px;font-weight:700;color:var(--c-green)">$0.00</span>
+        </div>
       </div>
 
       <button class="btn-primary" style="justify-content:center;padding:14px;font-size:15px;width:100%" onclick="submitQuickSale()">
@@ -1387,6 +1445,7 @@
       <div class="tabs">
         <div class="tab active" onclick="filterSales('all',this)">الكل</div>
         <div class="tab" onclick="filterSales('cash',this)">نقدي</div>
+        <div class="tab" onclick="filterSales('iban',this)">IBAN</div>
         <div class="tab" onclick="filterSales('pos',this)">POS</div>
         <div class="tab" onclick="filterSales('debt',this)">دين</div>
         <div class="tab" onclick="filterSales('return',this)">إعادة</div>
@@ -1394,6 +1453,19 @@
       </div>
       <div id="salesList"></div>
     </div><!-- /page-sales -->
+
+    <!-- ===== INVOICES PAGE ===== -->
+    <div class="page" id="page-invoices">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="page-title" style="margin-bottom:0">الفواتير</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--c-text3);background:var(--c-bg3);border:1px solid var(--c-border);border-radius:20px;padding:4px 12px">
+          <i class="ti ti-sort-ascending-letters" style="font-size:13px"></i> مرتّبة من الأقدم للأحدث
+        </div>
+      </div>
+      <div id="invoicesList">
+        <div class="empty"><i class="ti ti-receipt"></i><p>جاري تحميل الفواتير...</p></div>
+      </div>
+    </div><!-- /page-invoices -->
 
   </div><!-- /cashier-main -->
 
@@ -1413,6 +1485,8 @@
 
 </div><!-- /appScreen -->
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 <script>
 function setText(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;}
@@ -1916,6 +1990,106 @@ window.openReturnModal = function() {
       <i class="ti ti-arrow-back-up" style="font-size:18px"></i> تأكيد الإعادة
     </button>
   `);
+};
+
+// ======= PRINT INVOICE =======
+window.printSaleInvoice = async (saleId) => {
+  const s = (window.state?.sales || []).find(x => x.id === saleId);
+  if (!s) { window.showToast('لم يتم العثور على العملية', 'error'); return; }
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    window.showToast('مكتبة الطباعة لم تُحمَّل بعد، أعد المحاولة', 'error'); return;
+  }
+
+  if (window.loadStoreSettings) await window.loadStoreSettings();
+
+  const settings = window._storeSettings || {};
+  const storeName    = settings.storeName    || 'المحل';
+  const storeAddress = settings.storeAddress || '';
+  const rate         = window.state?.rate || 1;
+
+  const totalTRY = (s.price * s.qty * rate).toFixed(0);
+  const typeMap  = {cash:'نقدي', iban:'IBAN', pos:'POS', debt:'دين', partial:'دفعة', return:'إعادة', waste:'هدر'};
+
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;left:-9999px;top:0;width:520px;background:#fff;font-family:Cairo,sans-serif;direction:rtl';
+
+  div.innerHTML = `
+    <div style="background:#1e1b4b;padding:24px;text-align:center">
+      <div style="font-size:24px;font-weight:800;color:#fff">${storeName}</div>
+      ${storeAddress ? `<div style="font-size:12px;color:#c4b5fd;margin-top:5px">${storeAddress}</div>` : ''}
+    </div>
+
+    <div style="padding:22px 24px">
+      <div style="text-align:center;font-size:12px;font-weight:700;color:#4f46e5;letter-spacing:3px;margin-bottom:18px">فاتورة</div>
+
+      <div style="display:flex;gap:10px;margin-bottom:18px">
+        <div style="flex:1;background:#f5f3ff;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#7c3aed;font-weight:700;margin-bottom:3px">التاريخ</div>
+          <div style="font-size:13px;font-weight:700;color:#1e1b4b">${s.date||'—'}</div>
+        </div>
+        <div style="flex:1;background:#f5f3ff;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#7c3aed;font-weight:700;margin-bottom:3px">نوع العملية</div>
+          <div style="font-size:13px;font-weight:700;color:#1e1b4b">${typeMap[s.type]||s.type}</div>
+        </div>
+        ${s.customer ? `
+        <div style="flex:1;background:#f5f3ff;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#7c3aed;font-weight:700;margin-bottom:3px">الزبون</div>
+          <div style="font-size:13px;font-weight:700;color:#1e1b4b">${s.customer}</div>
+        </div>` : ''}
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+        <thead>
+          <tr style="background:#4f46e5">
+            <th style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;text-align:right">المنتج</th>
+            <th style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;text-align:center">الكمية</th>
+            <th style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;text-align:center">السعر (₺)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:#f8f7ff">
+            <td style="padding:12px 14px;font-size:14px;font-weight:700;color:#1e1b4b">${s.productName||'—'}</td>
+            <td style="padding:12px 14px;font-size:14px;font-weight:700;color:#1e1b4b;text-align:center">${s.qty}</td>
+            <td style="padding:12px 14px;font-size:14px;font-weight:700;color:#1e1b4b;text-align:center">₺${totalTRY}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="display:flex;justify-content:flex-end;margin-bottom:${s.note?'14px':'22px'}">
+        <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px 24px;text-align:center;min-width:160px">
+          <div style="font-size:11px;color:#16a34a;font-weight:700;margin-bottom:5px">الإجمالي</div>
+          <div style="font-size:26px;font-weight:800;color:#15803d">₺${totalTRY}</div>
+        </div>
+      </div>
+
+      ${s.note ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:#92400e"><span style="font-weight:700">ملاحظة: </span>${s.note}</div>` : ''}
+    </div>
+
+    <div style="border-top:1px solid #e8e6ff;margin:0 24px;padding:14px 0;text-align:center">
+      <div style="font-size:11px;color:#7c3aed;font-weight:700">مطور النظام: Mustafa SELEME</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:2px">05523223191</div>
+      <div style="font-size:10px;color:#c4b5fd;margin-top:2px">Powered by BatLab</div>
+    </div>
+  `;
+
+  document.body.appendChild(div);
+  window.showToast('جاري إنشاء الفاتورة...', 'info');
+
+  try {
+    const canvas = await html2canvas(div, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    document.body.removeChild(div);
+    const { jsPDF } = window.jspdf;
+    const imgW = 148;
+    const imgH = canvas.height * imgW / canvas.width;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [imgW, imgH] });
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
+    const fname = 'invoice-' + (s.date||'') + '-' + (s.productName||'sale').replace(/\s+/g,'-') + '.pdf';
+    doc.save(fname);
+    window.showToast('✓ تم تحميل الفاتورة', 'success');
+  } catch(e) {
+    if(document.body.contains(div)) document.body.removeChild(div);
+    window.showToast('خطأ: ' + e.message, 'error');
+  }
 };
 
 window.submitReturn = async function() {

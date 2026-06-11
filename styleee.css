@@ -9,28 +9,53 @@
   --radius:14px;--radius-sm:9px;
 }
 [data-theme="light"]{
-  --c-bg:#F2F5FC;--c-bg2:#FFFFFF;--c-bg3:#E6EDF8;
-  --c-text:#0D1421;--c-text2:#3A5070;--c-text3:#7A96BC;
-  --c-border:#C8D8F0;--c-primary-glow:rgba(59,130,246,0.12);
-  --c-primary-bright:#2563EB;
+  --c-bg:#CAC8C8;--c-bg2:#C2C2C2;--c-bg3:#C2C2C2;
+  --c-text:#0E0E14;--c-text2:#3A3A42;--c-text3:#5E5E66;
+  --c-border:#A0A0A0;--c-primary-glow:rgba(59,130,246,0.10);
+  --c-primary-bright:#1D4ED8;
 }
 [data-theme="light"] body{background:var(--c-bg);color:var(--c-text)}
-[data-theme="light"] body::before{background:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,0.05) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(99,102,241,0.04) 0%,transparent 50%)}
-[data-theme="light"] #sidebar{background:linear-gradient(180deg,#fff 0%,#F2F5FC 100%)!important}
-[data-theme="light"] #modalContent{background:linear-gradient(180deg,#fff 0%,#F2F5FC 100%)!important}
-[data-theme="light"] .metric-card{background:linear-gradient(135deg,#fff 0%,rgba(230,237,248,0.7) 100%)}
-[data-theme="light"] .topbar-mobile{background:rgba(242,245,252,0.95)}
-[data-theme="light"] .login-box{background:#fff;box-shadow:0 0 60px rgba(0,0,0,0.08),0 0 0 1px rgba(59,130,246,0.1)}
+[data-theme="light"] body::before{background:none}
+[data-theme="light"] #sidebar{background:#C2C2C2!important}
+[data-theme="light"] #modalContent{background:#C2C2C2!important}
+[data-theme="light"] .metric-card{background:#C2C2C2}
+[data-theme="light"] .topbar-mobile{background:rgba(194,194,194,0.95)}
+[data-theme="light"] .login-box{background:#C2C2C2;box-shadow:0 0 60px rgba(0,0,0,0.06),0 0 0 1px rgba(0,0,0,0.06)}
 [data-theme="light"] #loginScreen{background:var(--c-bg)}
-[data-theme="light"] .card{background:#fff}
-[data-theme="light"] .tabs{background:#fff}
-[data-theme="light"] .busy-card{background:#fff}
-[data-theme="light"] .sale-form-card{background:#fff}
+[data-theme="light"] .card{background:#C2C2C2}
+[data-theme="light"] .tabs{background:#C2C2C2}
+[data-theme="light"] .busy-card{background:#C2C2C2}
+[data-theme="light"] .sale-form-card{background:#C2C2C2}
 [data-theme="light"] .sale-summary-bar{background:var(--c-bg3)}
-[data-theme="light"] .converter{background:#fff}
-[data-theme="light"] .logo-text{text-shadow:0 0 20px rgba(59,130,246,0.25)}
-[data-theme="light"] .login-logo{text-shadow:0 0 30px rgba(59,130,246,0.2)}
+[data-theme="light"] .converter{background:#C2C2C2}
+[data-theme="light"] .logo-text{text-shadow:none}
+[data-theme="light"] .login-logo{text-shadow:none}
 [data-theme="light"] .metric-val{background:linear-gradient(135deg,var(--c-text) 0%,var(--c-primary) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ===== TEXT OUTLINE — وضع النهار: نص غامق → هالة بيضاء خفيفة ===== */
+[data-theme="light"] body{text-shadow:0 0 2px rgba(255,255,255,0.45)}
+/* reset على حقول الإدخال حتى لا تتأثر */
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea,
+[data-theme="light"] button{text-shadow:none}
+/* استثناء بعض الأزرار المهمة نبقّيها بالهالة */
+[data-theme="light"] .nav-item,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-sm{text-shadow:0 0 2px rgba(255,255,255,0.4)}
+
+/* ===== TEXT OUTLINE — وضع الليل: نص فاتح → هالة داكنة خفيفة ===== */
+:root body,
+html body{text-shadow:0 0 2px rgba(0,0,0,0.55)}
+:root input,
+:root select,
+:root textarea,
+:root button{text-shadow:none}
+:root .nav-item,
+:root .btn-primary,
+:root .btn-sm{text-shadow:0 0 2px rgba(0,0,0,0.5)}
+[data-theme="light"] body,[data-theme="light"] *{--ts-dark:0 0 2px rgba(0,0,0,0.55)}
+
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--c-bg);color:var(--c-text);font-family:'Cairo',sans-serif;font-size:15px;min-height:100vh}
 

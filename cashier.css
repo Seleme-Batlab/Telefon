@@ -340,8 +340,7 @@ html, body {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(3px);
+  background: rgba(0,0,0,.75);
   z-index: 9000;
   align-items: center;
   justify-content: center;
@@ -401,8 +400,7 @@ html, body {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,.75);
   z-index: 8000;
   align-items: center;
   justify-content: center;

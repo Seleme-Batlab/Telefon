@@ -1753,7 +1753,7 @@ const firebaseConfig = {
     if(!s) return;
     setModal(`
       <div class="modal-hdr">
-        <div class="modal-title"><i class="ti ti-arrow-back-up" style="color:#A78BFA;margin-left:6px"></i>إعادة / مرتجع</div>
+        <div class="modal-title"><i class="ti ti-arrow-back-up" style="color:var(--c-purple);margin-left:6px"></i>إعادة / مرتجع</div>
         <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
       <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:13px">
@@ -1768,7 +1768,7 @@ const firebaseConfig = {
         <input id="retReason" placeholder="مثال: عيب مصنعي، لا يناسب الزبون..." 
           style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-family:'Cairo',sans-serif;font-size:13px;box-sizing:border-box">
       </div>
-      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:6px;background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.4);color:#A78BFA" onclick="submitReturn('${saleId}')">
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:6px;background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.4);color:var(--c-purple)" onclick="submitReturn('${saleId}')">
         <i class="ti ti-arrow-back-up"></i> تأكيد الإعادة
       </button>`);
   };
@@ -1886,7 +1886,7 @@ const firebaseConfig = {
       const badgeCls=typeBadgeMap[s.type]||'badge-b';
       const label=typeLabelMap[s.type]||s.type;
       const icon=typeIconMap[s.type]||'ti-receipt';
-      const typeColor=s.type==='cash'?'var(--c-green)':s.type==='pos'?'#A78BFA':s.type==='debt'?'var(--c-amber)':s.type==='partial'?'var(--c-primary)':s.type==='return'?'#A78BFA':'var(--c-red)';
+      const typeColor=s.type==='cash'?'var(--c-green)':s.type==='pos'?'var(--c-purple)':s.type==='debt'?'var(--c-amber)':s.type==='partial'?'var(--c-primary)':s.type==='return'?'var(--c-purple)':'var(--c-red)';
       const showProfit=s.type!=='partial'&&s.type!=='waste'&&s.type!=='return';
       return `<tr style="border-right:3px solid ${typeColor}" onmouseover="this.style.background='rgba(59,130,246,0.05)'" onmouseout="this.style.background=''">
         <td style="${_tdS};text-align:right;font-weight:700">${s.productName}</td>
@@ -1900,13 +1900,13 @@ const firebaseConfig = {
           <span style="font-weight:700;color:${showProfit?(profit>=0?'var(--c-green)':'var(--c-red)'):'var(--c-text3)'}">${showProfit?((profit>=0?'+':'')+'$'+profit.toFixed(2)):'—'}</span>
         </td>
         <td style="${_tdS};text-align:center;font-size:12px;color:var(--c-text2)">${s.customer||'—'}</td>
-        <td style="${_tdS};text-align:center;font-size:12px">${s.employeeName?`<span style="color:#A78BFA;font-weight:600;cursor:pointer" onclick="openEmployeePopup('${s.employeeId}')" title="عرض إحصائيات الموظف"><i class='ti ti-user' style='font-size:10px;margin-left:3px;vertical-align:-1px'></i>${s.employeeName}</span>`:'<span style="color:var(--c-text3)">—</span>'}</td>
+        <td style="${_tdS};text-align:center;font-size:12px">${s.employeeName?`<span style="color:var(--c-purple);font-weight:600;cursor:pointer" onclick="openEmployeePopup('${s.employeeId}')" title="عرض إحصائيات الموظف"><i class='ti ti-user' style='font-size:10px;margin-left:3px;vertical-align:-1px'></i>${s.employeeName}</span>`:'<span style="color:var(--c-text3)">—</span>'}</td>
         <td style="${_tdS};text-align:center;font-size:12px;color:var(--c-text2)">${s.date||'—'}</td>
         <td style="${_tdS};text-align:left">
           <div style="display:flex;gap:5px;justify-content:flex-start">
             <button class="btn-sm" style="padding:5px 9px;font-size:11px" onclick="openEditSaleModal('${s.id}')"><i class="ti ti-edit"></i> تعديل</button>
             <button class="btn-sm" style="padding:5px 9px;font-size:11px;background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);color:#22c55e" onclick="printSaleInvoice('${s.id}')"><i class="ti ti-file-invoice"></i> فاتورة</button>
-            ${(s.type!=='return'&&s.type!=='partial'&&s.type!=='waste')?`<button class="btn-sm" style="padding:5px 9px;font-size:11px;background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3);color:#A78BFA" onclick="openReturnModal('${s.id}')"><i class="ti ti-arrow-back-up"></i> إعادة</button>`:''}
+            ${(s.type!=='return'&&s.type!=='partial'&&s.type!=='waste')?`<button class="btn-sm" style="padding:5px 9px;font-size:11px;background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3);color:var(--c-purple)" onclick="openReturnModal('${s.id}')"><i class="ti ti-arrow-back-up"></i> إعادة</button>`:''}
           <!-- <button class="btn-sm btn-red" style="padding:5px 9px;font-size:11px;background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3)" onclick="deleteSale('${s.id}')"><i class="ti ti-trash"></i> حذف</button>
           </div>    -->   
         </td>
@@ -2115,7 +2115,7 @@ const firebaseConfig = {
       const badgeCls=typeBadgeMap[s.type]||'badge-b';
       const label=typeLabelMap[s.type]||s.type;
       const icon=typeIconMap[s.type]||'ti-receipt';
-      const typeColor=s.type==='cash'?'var(--c-green)':s.type==='iban'?'var(--c-primary)':s.type==='pos'?'#A78BFA':s.type==='debt'?'var(--c-amber)':s.type==='partial'?'var(--c-primary)':s.type==='return'?'#A78BFA':'var(--c-red)';
+      const typeColor=s.type==='cash'?'var(--c-green)':s.type==='iban'?'var(--c-primary)':s.type==='pos'?'var(--c-purple)':s.type==='debt'?'var(--c-amber)':s.type==='partial'?'var(--c-primary)':s.type==='return'?'var(--c-purple)':'var(--c-red)';
       return `<tr id="inv-row-${s.id}" data-inv-id="${s.id}" style="border-right:3px solid ${typeColor};cursor:pointer" onclick="toggleInvoiceCheck('${s.id}')" onmouseover="if(!window._selectedInvoices.has('${s.id}'))this.style.background='rgba(59,130,246,0.04)'" onmouseout="if(!window._selectedInvoices.has('${s.id}'))this.style.background=''">
         <td style="${_tdS};text-align:center" onclick="event.stopPropagation()">
           <input type="checkbox" data-cb="${s.id}" onchange="toggleInvoiceCheck('${s.id}')"
@@ -2130,7 +2130,7 @@ const firebaseConfig = {
           <div style="font-size:11px;color:var(--c-text3)">₺${(total*state.rate).toFixed(0)}</div>
         </td>
         <td style="${_tdS};text-align:center;font-size:12px;color:var(--c-text2)">${s.customer||'—'}</td>
-        <td style="${_tdS};text-align:center;font-size:12px">${s.employeeName?`<span style="color:#A78BFA;font-weight:600">${s.employeeName}</span>`:'<span style="color:var(--c-text3)">—</span>'}</td>
+        <td style="${_tdS};text-align:center;font-size:12px">${s.employeeName?`<span style="color:var(--c-purple);font-weight:600">${s.employeeName}</span>`:'<span style="color:var(--c-text3)">—</span>'}</td>
         <td style="${_tdS};text-align:center;font-size:12px;color:var(--c-text2)"><div>${s.date||'—'}</div>${s.createdAt?`<div style="font-size:10px;color:var(--c-text3)">${new Date(s.createdAt).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'})}</div>`:''}</td>
         <td style="${_tdS};text-align:center" onclick="event.stopPropagation()">
           <button class="btn-sm" style="padding:5px 9px;font-size:11px;background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);color:#22c55e" onclick="printSaleInvoice('${s.id}')"><i class="ti ti-printer"></i> طباعة</button>
@@ -2159,7 +2159,7 @@ const firebaseConfig = {
       btn.innerHTML = '<i class="ti ti-receipt"></i> الفواتير';
       btn.style.background  = 'rgba(167,139,250,0.1)';
       btn.style.borderColor = 'rgba(167,139,250,0.4)';
-      btn.style.color       = '#A78BFA';
+      btn.style.color       = 'var(--c-purple)';
     }
   };
 
@@ -2243,7 +2243,7 @@ const firebaseConfig = {
               <span style="font-size:11px;color:var(--c-text3)">${s.date}</span>
               ${s.qty>1?`<span style="font-size:11px;color:var(--c-text3)">· ${t('qty')}: ${s.qty}</span>`:''}
               ${s.dueDate?`<span style="font-size:11px;color:${s.dueDate<today?'var(--c-red)':'var(--c-text3)'}">· ${t('due_pfx')}: ${s.dueDate}</span>`:''}
-              ${sellerName?`<span style="font-size:11px;font-weight:700;color:#A78BFA;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);border-radius:10px;padding:1px 7px"><i class="ti ti-user-check" style="font-size:10px;vertical-align:-1px"></i> ${sellerName}</span>`:''}
+              ${sellerName?`<span style="font-size:11px;font-weight:700;color:var(--c-purple);background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);border-radius:10px;padding:1px 7px"><i class="ti ti-user-check" style="font-size:10px;vertical-align:-1px"></i> ${sellerName}</span>`:''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
@@ -2286,7 +2286,7 @@ const firebaseConfig = {
         </td>
         <td style="${tdStyle};text-align:center">
           ${[...d.sellers].length
-            ? [...d.sellers].map(sel=>`<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#A78BFA;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);border-radius:20px;padding:2px 8px;margin:1px">${sel}</span>`).join('')
+            ? [...d.sellers].map(sel=>`<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--c-purple);background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);border-radius:20px;padding:2px 8px;margin:1px">${sel}</span>`).join('')
             : `<span style="color:var(--c-text3);font-size:12px">—</span>`}
         </td>
         <td style="${tdStyle};text-align:center;color:var(--c-text2)">${d.sales.length}</td>
@@ -2368,8 +2368,9 @@ const firebaseConfig = {
   }
   function _grid(ctx, W, H, pad, max, steps, cur) {
     cur=cur||'₺';
-    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
-    ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.font='10px Cairo';
+    const isLight=document.documentElement.dataset.theme==='light';
+    ctx.strokeStyle=isLight?'rgba(0,0,0,0.08)':'rgba(255,255,255,0.06)'; ctx.lineWidth=1;
+    ctx.fillStyle=isLight?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.3)'; ctx.font='10px Cairo';
     for(let i=0;i<=steps;i++){
       const y=pad.t+H-(i/steps)*H;
       ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+W,y); ctx.stroke();
@@ -2401,18 +2402,27 @@ const firebaseConfig = {
     ctx.fillStyle=g; ctx.fill();
     ctx.beginPath(); ctx.strokeStyle='#3B82F6'; ctx.lineWidth=2; ctx.lineJoin='round';
     pts.forEach((p2,i)=>i?ctx.lineTo(p2.x,p2.y):ctx.moveTo(p2.x,p2.y)); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.font='9px Cairo'; ctx.textAlign='center';
+    const _isL=document.documentElement.dataset.theme==='light';
+    const _tc=_isL?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.35)';
+    ctx.fillStyle=_tc; ctx.font='9px Cairo'; ctx.textAlign='center';
     pts.forEach((p2,i)=>{
       ctx.beginPath(); ctx.arc(p2.x,p2.y,3,0,Math.PI*2);
       ctx.fillStyle='#60A5FA'; ctx.fill();
-      if(i%2===0){ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.fillText(days[i].lbl,p2.x,p.t+cH+14);}
+      if(i%2===0){ctx.fillStyle=_tc; ctx.fillText(days[i].lbl,p2.x,p.t+cH+14);}
     });
   }
 
   function _drawTypesChart() {
     const o=_chartCtx('chartTypes',200); if(!o) return;
     const {ctx,W,H}=o;
-    const colors={cash:'#10B981',pos:'#A78BFA',debt:'#F59E0B',partial:'#3B82F6',return:'#A78BFA',waste:'#EF4444'};
+    const cs=getComputedStyle(document.documentElement);
+    const isLight=document.documentElement.dataset.theme==='light';
+    const textColor   = isLight ? 'rgba(14,14,20,0.85)'  : 'rgba(255,255,255,0.85)';
+    const textMuted   = isLight ? 'rgba(14,14,20,0.45)'  : 'rgba(255,255,255,0.45)';
+    const legendColor = isLight ? 'rgba(14,14,20,0.75)'  : 'rgba(255,255,255,0.7)';
+    const holeColor   = cs.getPropertyValue('--c-bg2').trim() || (isLight ? '#C2C2C2' : '#0D1421');
+    const strokeClr   = isLight ? 'rgba(180,180,180,0.8)' : 'rgba(8,12,20,0.6)';
+    const colors={cash:'#10B981',pos:'#818CF8',debt:'#F59E0B',partial:'#3B82F6',return:'#A78BFA',waste:'#EF4444'};
     const labels={cash:'نقدي',pos:'POS',debt:'دين',partial:'جزئي',return:'إرجاع',waste:'تالف'};
     const data={};
     state.sales.forEach(s=>{data[s.type]=(data[s.type]||0)+1;});
@@ -2423,21 +2433,20 @@ const firebaseConfig = {
       const sl=(cnt/total)*Math.PI*2;
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,angle,angle+sl); ctx.closePath();
       ctx.fillStyle=colors[type]||'#666'; ctx.fill();
-      ctx.strokeStyle='rgba(8,12,20,0.6)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.strokeStyle=strokeClr; ctx.lineWidth=2; ctx.stroke();
       angle+=sl;
     });
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--c-bg2').trim()||'#0D1421';
-    ctx.fill();
-    ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,0.85)';
+    ctx.fillStyle=holeColor; ctx.fill();
+    ctx.textAlign='center'; ctx.fillStyle=textColor;
     ctx.font='bold 18px Cairo'; ctx.fillText(total,cx,cy+2);
-    ctx.font='10px Cairo'; ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fillText('عملية',cx,cy+16);
+    ctx.font='10px Cairo'; ctx.fillStyle=textMuted; ctx.fillText('عملية',cx,cy+16);
     // legend
     let lx=W-30, ly=20;
     ctx.textAlign='right';
     Object.entries(data).forEach(([type,cnt])=>{
       ctx.fillStyle=colors[type]||'#666'; ctx.fillRect(lx-10,ly,10,10);
-      ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='11px Cairo';
+      ctx.fillStyle=legendColor; ctx.font='11px Cairo';
       ctx.fillText(labels[type]||type+' ('+cnt+')',lx-14,ly+9);
       ly+=22;
     });
@@ -2467,11 +2476,14 @@ const firebaseConfig = {
       ctx.beginPath();
       if(ctx.roundRect) ctx.roundRect(x,y,bW,bH,4); else ctx.rect(x,y,bW,bH);
       ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='9px Cairo'; ctx.textAlign='center';
+      const _isL2=document.documentElement.dataset.theme==='light';
+      const _tc2=_isL2?'rgba(0,0,0,0.55)':'rgba(255,255,255,0.55)';
+      const _tc2m=_isL2?'rgba(0,0,0,0.4)':'rgba(255,255,255,0.4)';
+      ctx.fillStyle=_tc2; ctx.font='9px Cairo'; ctx.textAlign='center';
       const lbl=val>=1000?'₺'+(val/1000).toFixed(1)+'k':'₺'+val.toFixed(0);
       ctx.fillText(lbl,x+bW/2,y-4);
       ctx.save(); ctx.translate(x+bW/2,p.t+cH+6); ctx.rotate(-Math.PI/3.5);
-      ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='10px Cairo'; ctx.textAlign='right';
+      ctx.fillStyle=_tc2m; ctx.font='10px Cairo'; ctx.textAlign='right';
       ctx.fillText(name.slice(0,10),0,0); ctx.restore();
     });
   }
@@ -2492,10 +2504,13 @@ const firebaseConfig = {
     const cW=W-p.l-p.r, cH=H-p.t-p.b;
     _grid(ctx,cW,cH,p,max,3,'₺');
     const gW=cW/days.length, bW=Math.max(8,gW*0.28);
+    const _isL3=document.documentElement.dataset.theme==='light';
+    const _tc3=_isL3?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.5)';
+    const _tc3m=_isL3?'rgba(0,0,0,0.4)':'rgba(255,255,255,0.35)';
     ctx.fillStyle='rgba(16,185,129,0.85)'; ctx.fillRect(p.l,8,10,10);
-    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='10px Cairo'; ctx.textAlign='left'; ctx.fillText('ربح ₺',p.l+13,17);
+    ctx.fillStyle=_tc3; ctx.font='10px Cairo'; ctx.textAlign='left'; ctx.fillText('ربح ₺',p.l+13,17);
     ctx.fillStyle='rgba(239,68,68,0.85)'; ctx.fillRect(p.l+56,8,10,10);
-    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillText('مصاريف ₺',p.l+69,17);
+    ctx.fillStyle=_tc3; ctx.fillText('مصاريف ₺',p.l+69,17);
     days.forEach((d,i)=>{
       const x=p.l+i*gW+gW/2;
       const pH=(d.profit/max)*cH, eH=(d.expense/max)*cH;
@@ -2503,7 +2518,7 @@ const firebaseConfig = {
       ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x-bW-1,p.t+cH-pH,bW,pH||1,3); else ctx.rect(x-bW-1,p.t+cH-pH,bW,pH||1); ctx.fill();
       ctx.fillStyle='rgba(239,68,68,0.85)';
       ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x+1,p.t+cH-eH,bW,eH||1,3); else ctx.rect(x+1,p.t+cH-eH,bW,eH||1); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.font='9px Cairo'; ctx.textAlign='center';
+      ctx.fillStyle=_tc3m; ctx.font='9px Cairo'; ctx.textAlign='center';
       ctx.fillText(d.lbl,x,p.t+cH+13);
     });
   }
@@ -3714,7 +3729,7 @@ const firebaseConfig = {
         <!-- الموظفين -->
         <div class="nav-section">الموظفين</div>
         <button class="nav-item" data-page="employees" onclick="showPage('employees');setTimeout(renderEmployees,60)">
-          <i class="ti ti-users" style="color:#A78BFA"></i> <span style="color:#A78BFA">الموظفين</span>
+          <i class="ti ti-users" style="color:var(--c-purple)"></i> <span style="color:var(--c-purple)">الموظفين</span>
         </button>
         <button class="nav-item" data-page="cashbox" onclick="showPage('cashbox');setTimeout(renderCashbox,60)">
           <i class="ti ti-building-bank" style="color:#F59E0B"></i> <span style="color:#F59E0B">الصندوق</span>
@@ -3815,7 +3830,7 @@ const firebaseConfig = {
             <canvas id="chartDaily" style="width:100%;display:block"></canvas>
           </div>
           <div class="card" style="padding:20px">
-            <div style="font-size:12px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px"><i class="ti ti-chart-donut" style="color:#A78BFA;vertical-align:-1px;margin-left:5px"></i> أنواع المبيعات</div>
+            <div style="font-size:12px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px"><i class="ti ti-chart-donut" style="color:var(--c-purple);vertical-align:-1px;margin-left:5px"></i> أنواع المبيعات</div>
             <canvas id="chartTypes" style="width:100%;display:block"></canvas>
           </div>
           <div class="card" style="padding:20px">
@@ -4445,7 +4460,7 @@ const firebaseConfig = {
 
           <!-- الموظف -->
           <div class="fg" style="margin-bottom:14px">
-            <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-user" style="color:#A78BFA"></i> <span style="color:#A78BFA">الموظف (اختياري)</span></div>
+            <div class="sale-form-title" style="margin-bottom:8px"><i class="ti ti-user" style="color:var(--c-purple)"></i> <span style="color:var(--c-purple)">الموظف (اختياري)</span></div>
             <select id="quickEmployee" style="width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif">
               <option value="">— بدون موظف —</option>
             </select>
@@ -4487,7 +4502,7 @@ const firebaseConfig = {
             <button class="btn-sm" style="padding:6px 12px;font-size:12px;background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);color:#22c55e" onclick="printLastInvoice()">
               <i class="ti ti-printer"></i> آخر فاتورة
             </button>
-            <button class="btn-sm" id="btnToggleSalesView" style="padding:6px 12px;font-size:12px;background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.4);color:#A78BFA" onclick="toggleSalesView()">
+            <button class="btn-sm" id="btnToggleSalesView" style="padding:6px 12px;font-size:12px;background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.4);color:var(--c-purple)" onclick="toggleSalesView()">
               <i class="ti ti-receipt"></i> الفواتير
             </button>
           </div>
@@ -4624,8 +4639,8 @@ const firebaseConfig = {
       <!-- EMPLOYEES PAGE -->
       <div class="page" id="page-employees">
         <div class="page-header">
-          <div class="page-title"><i class="ti ti-users" style="font-size:18px;vertical-align:-3px;margin-left:6px;color:#A78BFA"></i> الموظفين</div>
-          <button class="btn-primary" style="padding:8px 14px;font-size:13px;background:rgba(167,139,250,0.15);border-color:rgba(167,139,250,0.4);color:#A78BFA" onclick="openAddEmployeeModal()">
+          <div class="page-title"><i class="ti ti-users" style="font-size:18px;vertical-align:-3px;margin-left:6px;color:var(--c-purple)"></i> الموظفين</div>
+          <button class="btn-primary" style="padding:8px 14px;font-size:13px;background:rgba(167,139,250,0.15);border-color:rgba(167,139,250,0.4);color:var(--c-purple)" onclick="openAddEmployeeModal()">
             <i class="ti ti-plus"></i> موظف جديد
           </button>
         </div>
@@ -4644,7 +4659,7 @@ const firebaseConfig = {
         <!-- سجل مبيعات الموظفين -->
         <div style="margin-top:24px">
           <div class="section-hdr" style="margin-bottom:14px">
-            <i class="ti ti-receipt" style="color:#A78BFA"></i>
+            <i class="ti ti-receipt" style="color:var(--c-purple)"></i>
             <span style="font-weight:700">سجل مبيعات الموظفين</span>
           </div>
           <div id="employeeSalesLog"></div>
@@ -4747,7 +4762,7 @@ const firebaseConfig = {
 
           <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
             <div>
-              <div style="font-size:13px;font-weight:700;color:var(--c-text);margin-bottom:3px"><i class="ti ti-arrow-back-up" style="color:#A78BFA;margin-left:6px;vertical-align:-1px"></i>السماح بالمرتجعات</div>
+              <div style="font-size:13px;font-weight:700;color:var(--c-text);margin-bottom:3px"><i class="ti ti-arrow-back-up" style="color:var(--c-purple);margin-left:6px;vertical-align:-1px"></i>السماح بالمرتجعات</div>
               <div style="font-size:11px;color:var(--c-text3)">إظهار خيار الإعادة في الكاشير</div>
             </div>
             <label class="settings-toggle"><input type="checkbox" id="set-allowReturns" onchange="onSettingChange()" checked><span class="settings-slider"></span></label>
@@ -5805,14 +5820,14 @@ window.renderEmployees = function() {
       const totalQty = empSales.reduce((a, s) => a + (s.qty || 0), 0);
       const totalUSD = empSales.reduce((a, s) => a + (s.price || 0) * (s.qty || 0), 0);
       const lastSale = empSales.length ? empSales.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0] : null;
-      return `<div class="card" style="margin-bottom:12px;padding:16px 18px;border-right:4px solid #A78BFA">
+      return `<div class="card" style="margin-bottom:12px;padding:16px 18px;border-right:4px solid var(--c-purple)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
           <div style="flex:1;min-width:0">
             <div style="font-size:15px;font-weight:700;color:var(--c-text);margin-bottom:4px;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="openEmployeePopup('${e.id}')">
-              <i class="ti ti-user" style="font-size:13px;vertical-align:-1px;color:#A78BFA;margin-left:6px"></i>${e.name}
+              <i class="ti ti-user" style="font-size:13px;vertical-align:-1px;color:var(--c-purple);margin-left:6px"></i>${e.name}
               ${e.role==='manager'
-                ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(167,139,250,0.15);color:#A78BFA;border:1px solid rgba(167,139,250,0.4)"><i class="ti ti-crown" style="font-size:9px;vertical-align:-1px;margin-left:2px"></i>مدير</span>`
-                : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(96,165,250,0.12);color:#60A5FA;border:1px solid rgba(96,165,250,0.35)"><i class="ti ti-device-mobile" style="font-size:9px;vertical-align:-1px;margin-left:2px"></i>كاشير</span>`}
+                ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(167,139,250,0.15);color:var(--c-purple);border:1px solid rgba(167,139,250,0.4)"><i class="ti ti-crown" style="font-size:9px;vertical-align:-1px;margin-left:2px"></i>مدير</span>`
+                : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(96,165,250,0.12);color:#0f0ed3;border:1px solid rgba(96,165,250,0.35)"><i class="ti ti-device-mobile" style="font-size:9px;vertical-align:-1px;margin-left:2px"></i>كاشير</span>`}
             </div>
             <div style="font-size:12px;color:var(--c-text3);margin-bottom:6px">
               <i class="ti ti-at" style="font-size:11px;vertical-align:-1px;margin-left:3px"></i>${e.username || '—'}
@@ -5828,7 +5843,7 @@ window.renderEmployees = function() {
           </div>
           <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start">
             <div style="text-align:center;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:var(--radius-sm);padding:8px 12px">
-              <div style="font-size:16px;font-weight:700;color:#A78BFA">${totalQty}</div>
+              <div style="font-size:16px;font-weight:700;color:var(--c-purple)">${totalQty}</div>
               <div style="font-size:10px;color:var(--c-text3)">مبيع</div>
             </div>
             <div style="text-align:center;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-sm);padding:8px 12px">
@@ -5836,7 +5851,7 @@ window.renderEmployees = function() {
               <div style="font-size:10px;color:var(--c-text3)">مبيعات</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
-              <button class="btn-sm" style="padding:5px 10px;font-size:11px;background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.3);color:#A78BFA" onclick="openEmployeePopup('${e.id}')">
+              <button class="btn-sm" style="padding:5px 10px;font-size:11px;background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.3);color:var(--c-purple)" onclick="openEmployeePopup('${e.id}')">
                 <i class="ti ti-chart-bar"></i> إحصائيات
               </button>
               <button class="btn-sm btn-red" style="padding:5px 10px;font-size:11px;background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3)" onclick="deleteEmployee('${e.id}','${e.name.replace(/'/g,"\\'")}')">
@@ -5887,11 +5902,11 @@ window.renderEmployeeSalesLog = function() {
       <tbody>` +
     empSales.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).map(s => {
       const total = (s.price || 0) * (s.qty || 0);
-      const typeColor = s.type === 'cash' ? 'var(--c-green)' : s.type === 'pos' ? '#60A5FA' : s.type === 'debt' ? 'var(--c-amber)' : s.type === 'return' ? '#A78BFA' : 'var(--c-text3)';
+      const typeColor = s.type === 'cash' ? 'var(--c-green)' : s.type === 'pos' ? '#60A5FA' : s.type === 'debt' ? 'var(--c-amber)' : s.type === 'return' ? 'var(--c-purple)' : 'var(--c-text3)';
       const typeLabel = s.type === 'cash' ? 'نقدي' : s.type === 'pos' ? 'POS' : s.type === 'debt' ? 'دين' : s.type === 'return' ? 'إعادة' : s.type;
       return `<tr onmouseover="this.style.background='rgba(167,139,250,0.05)'" onmouseout="this.style.background=''">
         <td style="${_tdS};text-align:right">
-          <span style="font-weight:700;color:#A78BFA;cursor:pointer" onclick="openEmployeePopup('${s.employeeId}')">
+          <span style="font-weight:700;color:var(--c-purple);cursor:pointer" onclick="openEmployeePopup('${s.employeeId}')">
             <i class='ti ti-user' style='font-size:11px;vertical-align:-1px;margin-left:3px'></i>${s.employeeName}
           </span>
         </td>
@@ -5911,7 +5926,7 @@ window.renderEmployeeSalesLog = function() {
 window.openAddEmployeeModal = function() {
   window.setModal(`
     <div class="modal-hdr">
-      <div class="modal-title"><i class="ti ti-user-plus" style="vertical-align:-2px;margin-left:6px;color:#A78BFA"></i> إضافة موظف جديد</div>
+      <div class="modal-title"><i class="ti ti-user-plus" style="vertical-align:-2px;margin-left:6px;color:var(--c-purple)"></i> إضافة موظف جديد</div>
       <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
     </div>
     <div class="fg" style="margin-bottom:12px">
@@ -5933,9 +5948,9 @@ window.openAddEmployeeModal = function() {
       <label style="font-size:11px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px">الدور الوظيفي</label>
       <div style="display:flex;gap:10px">
         <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer;background:var(--c-bg3);transition:all .2s" id="empRoleMgrLabel">
-          <input type="radio" name="empRole" id="empRoleMgr" value="manager" style="accent-color:#A78BFA" checked onchange="document.getElementById('empRoleMgrLabel').style.borderColor='rgba(167,139,250,0.6)';document.getElementById('empRoleCashLabel').style.borderColor='var(--c-border)'">
+          <input type="radio" name="empRole" id="empRoleMgr" value="manager" style="accent-color:var(--c-purple)" checked onchange="document.getElementById('empRoleMgrLabel').style.borderColor='rgba(167,139,250,0.6)';document.getElementById('empRoleCashLabel').style.borderColor='var(--c-border)'">
           <div>
-            <div style="font-size:13px;font-weight:700;color:#A78BFA">مدير</div>
+            <div style="font-size:13px;font-weight:700;color:var(--c-purple)">مدير</div>
             <div style="font-size:10px;color:var(--c-text3)">صلاحية الصندوق والدرج</div>
           </div>
         </label>
@@ -5948,10 +5963,10 @@ window.openAddEmployeeModal = function() {
         </label>
       </div>
     </div>
-    <button class="btn-primary" style="width:100%;justify-content:center;padding:12px;background:rgba(167,139,250,0.2);border-color:rgba(167,139,250,0.5);color:#A78BFA" onclick="saveEmployee()">
+    <button class="btn-primary" style="width:100%;justify-content:center;padding:12px;background:rgba(167,139,250,0.2);border-color:rgba(167,139,250,0.5);color:var(--c-purple)" onclick="saveEmployee()">
       <i class="ti ti-check"></i> حفظ الموظف
     </button>
-  `);
+  `, true);
 };
 
 window.saveEmployee = async function() {
@@ -6016,7 +6031,7 @@ window.openEmployeePopup = function(empId) {
   window.setModal(`
     <div class="modal-hdr">
       <div class="modal-title">
-        <i class="ti ti-user-circle" style="vertical-align:-2px;margin-left:6px;color:#A78BFA"></i>
+        <i class="ti ti-user-circle" style="vertical-align:-2px;margin-left:6px;color:var(--c-purple)"></i>
         ${e.name}
       </div>
       <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
@@ -6025,7 +6040,7 @@ window.openEmployeePopup = function(empId) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
       <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:var(--radius-sm);padding:12px 14px">
         <div style="font-size:10px;color:var(--c-text3);font-weight:700;margin-bottom:5px">قطع مباعة</div>
-        <div style="font-size:22px;font-weight:700;color:#A78BFA">${totalQty}</div>
+        <div style="font-size:22px;font-weight:700;color:var(--c-purple)">${totalQty}</div>
       </div>
       <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-sm);padding:12px 14px">
         <div style="font-size:10px;color:var(--c-text3);font-weight:700;margin-bottom:5px">إجمالي المبيعات</div>
@@ -6070,7 +6085,7 @@ window.openEmployeePopup = function(empId) {
       <div style="display:flex;flex-direction:column;gap:5px">
         ${topList.map((p, i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--c-bg3);border-radius:6px;border:1px solid var(--c-border)">
           <span style="font-size:12px;font-weight:600;color:var(--c-text)">${i===0?'🥇':i===1?'🥈':'🥉'} ${p[0]}</span>
-          <span style="font-size:12px;font-weight:700;color:#A78BFA">${p[1]} قطعة</span>
+          <span style="font-size:12px;font-weight:700;color:var(--c-purple)">${p[1]} قطعة</span>
         </div>`).join('')}
       </div>
     </div>` : ''}
@@ -6081,7 +6096,7 @@ window.openEmployeePopup = function(empId) {
         ${recentSales.map(s => {
           const total = (s.price||0)*(s.qty||0);
           const pm = s.payMethod || s.type;
-          const typeColor = pm==='cash'?'var(--c-green)':pm==='pos'?'#60A5FA':pm==='iban'?'var(--c-primary-bright)':pm==='debt'?'var(--c-amber)':s.type==='return'?'#A78BFA':'var(--c-text3)';
+          const typeColor = pm==='cash'?'var(--c-green)':pm==='pos'?'#60A5FA':pm==='iban'?'var(--c-primary-bright)':pm==='debt'?'var(--c-amber)':s.type==='return'?'var(--c-purple)':'var(--c-text3)';
           const typeBg    = pm==='cash'?'rgba(16,185,129,0.12)':pm==='pos'?'rgba(96,165,250,0.12)':pm==='iban'?'rgba(59,130,246,0.12)':pm==='debt'?'rgba(245,158,11,0.12)':s.type==='return'?'rgba(167,139,250,0.12)':'rgba(255,255,255,0.06)';
           const typeIcon  = pm==='cash'?'ti-cash':pm==='pos'?'ti-device-mobile':pm==='iban'?'ti-building-bank':pm==='debt'?'ti-clock-dollar':s.type==='return'?'ti-arrow-back-up':'ti-receipt';
           const typeLabel = pm==='cash'?'نقدي':pm==='pos'?'POS':pm==='iban'?'IBAN':pm==='debt'?'دين':s.type==='return'?'إعادة':pm;
@@ -6167,7 +6182,7 @@ window.renderCashbox = function() {
           <i class="ti ${icon}" style="font-size:11px;vertical-align:-1px;margin-left:3px"></i>${label}
         </span>
       </td>
-      <td style="${_td};text-align:right;font-weight:600;color:#A78BFA">
+      <td style="${_td};text-align:right;font-weight:600;color:var(--c-purple)">
         <i class="ti ti-user" style="font-size:11px;vertical-align:-1px;margin-left:4px;opacity:.7"></i>${t.employeeName||'—'}
       </td>
       <td style="${_td};text-align:center;font-weight:700;color:${color}">${isW?'-':'+'} ₺${Math.round(t.amount||0).toLocaleString('ar')}</td>

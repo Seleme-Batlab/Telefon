@@ -785,7 +785,7 @@ const firebaseConfig = {
   // ======= STATE =======
   window.state = {
     rate: 32.5,
-    products: [], sales: [], wastes: [], extraProfits: [], expenses: [], distributors: [], restocks: [], employees: [],
+    products: [], sales: [], wastes: [], extraProfits: [], expenses: [], distributors: [], restocks: [], employees: [], cashboxTransactions: [],
     productFilter: 'all', saleFilter: 'all',
     activePage: 'dashboard', activeProductSub: 'all',
     weekStartDate: null,   // تاريخ بداية الأسبوع الحالي
@@ -854,6 +854,7 @@ const firebaseConfig = {
     if(window.rsPagePopulateDistributors) rsPagePopulateDistributors();
     if(window.renderEmployees) renderEmployees();
     if(window.populateEmployeeDropdown) populateEmployeeDropdown();
+    if(window.renderCashbox) renderCashbox();
     if(window.renderWarranty) renderWarranty();
     // load store settings
     if(window.loadStoreSettings) window.loadStoreSettings();
@@ -881,8 +882,9 @@ const firebaseConfig = {
       subscribeCollection('expenses',    'expenses',    onEach, 'بالمصاريف');
       subscribeCollection('distributors','distributors',onEach, 'بالموزعين');
       subscribeCollection('restocks',    'restocks',    onEach, 'بسجل الإضافات');
-      subscribeCollection('employees',   'employees',   onEach, 'بالموظفين');
-      subscribeCollection('warranties',  'warranties',  onEach, 'بالكفالات');
+      subscribeCollection('employees',          'employees',          onEach, 'بالموظفين');
+      subscribeCollection('warranties',         'warranties',         onEach, 'بالكفالات');
+      subscribeCollection('cashboxTransactions','cashboxTransactions',onEach, 'بالصندوق');
     });
   }
 
@@ -3714,6 +3716,9 @@ const firebaseConfig = {
         <button class="nav-item" data-page="employees" onclick="showPage('employees');setTimeout(renderEmployees,60)">
           <i class="ti ti-users" style="color:#A78BFA"></i> <span style="color:#A78BFA">الموظفين</span>
         </button>
+        <button class="nav-item" data-page="cashbox" onclick="showPage('cashbox');setTimeout(renderCashbox,60)">
+          <i class="ti ti-building-bank" style="color:#F59E0B"></i> <span style="color:#F59E0B">الصندوق</span>
+        </button>
 
         <!-- البيع -->
         <div class="nav-section" data-i18n="nav_sales_sec">البيع</div>
@@ -4646,6 +4651,46 @@ const firebaseConfig = {
         </div>
       </div>
 
+
+      <!-- ===== CASHBOX PAGE ===== -->
+      <div class="page" id="page-cashbox">
+        <div class="page-header">
+          <div class="page-title"><i class="ti ti-building-bank" style="font-size:18px;vertical-align:-3px;margin-left:6px;color:#F59E0B"></i> الصندوق (الخزنة)</div>
+          <button class="btn-primary" style="padding:8px 14px;font-size:13px;background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);color:#F59E0B" onclick="openAddCashboxTransactionModal()">
+            <i class="ti ti-plus"></i> إضافة حركة
+          </button>
+        </div>
+
+        <!-- بطاقات الملخص -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px" id="cashboxSummaryCards">
+          <div class="card" style="padding:16px 14px;border-right:3px solid #10B981">
+            <div style="font-size:10px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px"><i class="ti ti-trending-up" style="color:#10B981;font-size:12px;vertical-align:-1px;margin-left:4px"></i>إجمالي المبيعات</div>
+            <div style="font-size:20px;font-weight:800;color:#10B981" id="cashboxTotalSales">₺0</div>
+          </div>
+          <div class="card" style="padding:16px 14px;border-right:3px solid #60A5FA">
+            <div style="font-size:10px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px"><i class="ti ti-arrow-bar-up" style="color:#60A5FA;font-size:12px;vertical-align:-1px;margin-left:4px"></i>إجمالي الإيداعات</div>
+            <div style="font-size:20px;font-weight:800;color:#60A5FA" id="cashboxTotalDeposits">₺0</div>
+          </div>
+          <div class="card" style="padding:16px 14px;border-right:3px solid var(--c-red)">
+            <div style="font-size:10px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px"><i class="ti ti-arrow-bar-down" style="color:var(--c-red);font-size:12px;vertical-align:-1px;margin-left:4px"></i>إجمالي السحوبات</div>
+            <div style="font-size:20px;font-weight:800;color:var(--c-red)" id="cashboxTotalWithdrawals">₺0</div>
+          </div>
+        </div>
+
+        <!-- رصيد الصندوق -->
+        <div class="card" style="padding:20px;margin-bottom:20px;text-align:center;border:1.5px solid rgba(245,158,11,0.35);background:rgba(245,158,11,0.05)">
+          <div style="font-size:12px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px"><i class="ti ti-building-bank" style="color:#F59E0B;font-size:14px;vertical-align:-2px;margin-left:5px"></i>رصيد الصندوق الحالي</div>
+          <div style="font-size:32px;font-weight:800;color:#F59E0B" id="cashboxBalance">₺0</div>
+          <div style="font-size:12px;color:var(--c-text3);margin-top:4px">المبيعات + الإيداعات − السحوبات</div>
+        </div>
+
+        <!-- سجل الحركات -->
+        <div class="section-hdr" style="margin-bottom:14px">
+          <i class="ti ti-list-details" style="color:#F59E0B"></i>
+          <span style="font-weight:700">سجل حركات الصندوق</span>
+        </div>
+        <div id="cashboxTransactionsList"></div>
+      </div>
 
       <!-- ===== WARRANTY PAGE ===== -->
       <div class="page" id="page-warranty">
@@ -5763,8 +5808,11 @@ window.renderEmployees = function() {
       return `<div class="card" style="margin-bottom:12px;padding:16px 18px;border-right:4px solid #A78BFA">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
           <div style="flex:1;min-width:0">
-            <div style="font-size:15px;font-weight:700;color:var(--c-text);margin-bottom:4px;cursor:pointer" onclick="openEmployeePopup('${e.id}')">
+            <div style="font-size:15px;font-weight:700;color:var(--c-text);margin-bottom:4px;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="openEmployeePopup('${e.id}')">
               <i class="ti ti-user" style="font-size:13px;vertical-align:-1px;color:#A78BFA;margin-left:6px"></i>${e.name}
+              ${e.role==='manager'
+                ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(167,139,250,0.15);color:#A78BFA;border:1px solid rgba(167,139,250,0.4)"><i class="ti ti-crown" style="font-size:9px;vertical-align:-1px;margin-left:2px"></i>مدير</span>`
+                : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(96,165,250,0.12);color:#60A5FA;border:1px solid rgba(96,165,250,0.35)"><i class="ti ti-device-mobile" style="font-size:9px;vertical-align:-1px;margin-left:2px"></i>كاشير</span>`}
             </div>
             <div style="font-size:12px;color:var(--c-text3);margin-bottom:6px">
               <i class="ti ti-at" style="font-size:11px;vertical-align:-1px;margin-left:3px"></i>${e.username || '—'}
@@ -5876,10 +5924,29 @@ window.openAddEmployeeModal = function() {
       <input type="text" id="empUsername" placeholder="مثلاً: mohammed"
         style="width:100%;padding:11px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;box-sizing:border-box;direction:ltr">
     </div>
-    <div class="fg" style="margin-bottom:16px">
+    <div class="fg" style="margin-bottom:12px">
       <label style="font-size:11px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">كلمة السر</label>
       <input type="text" id="empPassword" placeholder="كلمة سر قوية"
         style="width:100%;padding:11px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;box-sizing:border-box;direction:ltr">
+    </div>
+    <div class="fg" style="margin-bottom:16px">
+      <label style="font-size:11px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px">الدور الوظيفي</label>
+      <div style="display:flex;gap:10px">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer;background:var(--c-bg3);transition:all .2s" id="empRoleMgrLabel">
+          <input type="radio" name="empRole" id="empRoleMgr" value="manager" style="accent-color:#A78BFA" checked onchange="document.getElementById('empRoleMgrLabel').style.borderColor='rgba(167,139,250,0.6)';document.getElementById('empRoleCashLabel').style.borderColor='var(--c-border)'">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#A78BFA">مدير</div>
+            <div style="font-size:10px;color:var(--c-text3)">صلاحية الصندوق والدرج</div>
+          </div>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer;background:var(--c-bg3);transition:all .2s" id="empRoleCashLabel">
+          <input type="radio" name="empRole" id="empRoleCash" value="cashier" style="accent-color:#60A5FA" onchange="document.getElementById('empRoleCashLabel').style.borderColor='rgba(96,165,250,0.6)';document.getElementById('empRoleMgrLabel').style.borderColor='var(--c-border)'">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#60A5FA">كاشير</div>
+            <div style="font-size:10px;color:var(--c-text3)">بيع فقط، بدون صلاحية الدرج</div>
+          </div>
+        </label>
+      </div>
     </div>
     <button class="btn-primary" style="width:100%;justify-content:center;padding:12px;background:rgba(167,139,250,0.2);border-color:rgba(167,139,250,0.5);color:#A78BFA" onclick="saveEmployee()">
       <i class="ti ti-check"></i> حفظ الموظف
@@ -5891,13 +5958,15 @@ window.saveEmployee = async function() {
   const name = (document.getElementById('empName')?.value || '').trim();
   const username = (document.getElementById('empUsername')?.value || '').trim();
   const password = (document.getElementById('empPassword')?.value || '').trim();
+  const roleEl = document.querySelector('input[name="empRole"]:checked');
+  const role = roleEl ? roleEl.value : 'cashier';
   if (!name) { window.showToast('أدخل اسم الموظف', 'error'); return; }
   if (!username) { window.showToast('أدخل اسم المستخدم', 'error'); return; }
   if (!password) { window.showToast('أدخل كلمة السر', 'error'); return; }
   try {
     const uid = window._auth?.currentUser?.uid || '';
     await window._addDoc(window._collection(window._db, 'employees'), {
-      userId: uid, name, username, password,
+      userId: uid, name, username, password, role,
       createdAt: new Date().toISOString(),
       lastLogin: null
     });
@@ -6031,6 +6100,187 @@ window.openEmployeePopup = function(empId) {
       </div>
     </div>` : ''}
   `, true);
+};
+
+// =============================================
+// ===== الصندوق (الخزنة) =====
+// =============================================
+
+window.renderCashbox = function() {
+  if (!document.getElementById('page-cashbox')?.classList.contains('active')) return;
+  const rate = window.state?.rate || 32.5;
+  const sales = (window.state?.sales || []).filter(s => s.type !== 'return' && s.type !== 'partial');
+  const txs = (window.state?.cashboxTransactions || []);
+
+  // إجمالي المبيعات النقدية (نقدي + POS + IBAN)
+  const totalSalesTRY = sales
+    .filter(s => s.type === 'cash' || s.type === 'pos' || s.type === 'iban')
+    .reduce((sum, s) => sum + (s.price || 0) * (s.qty || 0) * rate, 0);
+
+  const totalDeposits    = txs.filter(t => t.txType === 'deposit').reduce((sum, t) => sum + (t.amount || 0), 0);
+  const totalWithdrawals = txs.filter(t => t.txType === 'withdrawal').reduce((sum, t) => sum + (t.amount || 0), 0);
+  const balance = totalSalesTRY + totalDeposits - totalWithdrawals;
+
+  const fmt = n => '₺' + Math.round(n).toLocaleString('ar');
+  const el = (id, txt) => { const e = document.getElementById(id); if(e) e.textContent = txt; };
+  el('cashboxTotalSales',       fmt(totalSalesTRY));
+  el('cashboxTotalDeposits',    fmt(totalDeposits));
+  el('cashboxTotalWithdrawals', fmt(totalWithdrawals));
+  const balEl = document.getElementById('cashboxBalance');
+  if(balEl){
+    balEl.textContent = fmt(balance);
+    balEl.style.color = balance >= 0 ? '#F59E0B' : 'var(--c-red)';
+  }
+
+  // سجل الحركات
+  const listEl = document.getElementById('cashboxTransactionsList');
+  if(!listEl) return;
+  if(!txs.length){
+    listEl.innerHTML = `<div style="text-align:center;padding:40px 10px;color:var(--c-text3);font-size:13px;font-family:'Cairo',sans-serif">
+      <i class="ti ti-building-bank" style="display:block;font-size:36px;opacity:.2;margin-bottom:10px"></i>
+      لا توجد حركات مسجّلة بعد
+    </div>`;
+    return;
+  }
+  const _th = 'padding:9px 14px;font-size:10px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;border-bottom:1px solid var(--c-border)';
+  const _td = 'padding:9px 14px;font-size:13px;border-bottom:1px solid var(--c-border);vertical-align:middle';
+  listEl.innerHTML = `<div style="overflow-x:auto;border:1px solid var(--c-border);border-radius:var(--radius)">
+  <table style="width:100%;border-collapse:collapse">
+    <thead><tr style="background:var(--c-bg3)">
+      <th style="${_th};text-align:right">النوع</th>
+      <th style="${_th};text-align:right">الموظف</th>
+      <th style="${_th};text-align:center">المبلغ ₺</th>
+      <th style="${_th};text-align:right">ملاحظة</th>
+      <th style="${_th};text-align:center">التاريخ</th>
+      <th style="${_th};text-align:left">حذف</th>
+    </tr></thead>
+    <tbody>` +
+  txs.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(t => {
+    const isW = t.txType === 'withdrawal';
+    const color = isW ? 'var(--c-red)' : '#60A5FA';
+    const bg    = isW ? 'rgba(239,68,68,0.06)' : 'rgba(96,165,250,0.06)';
+    const icon  = isW ? 'ti-arrow-bar-down' : 'ti-arrow-bar-up';
+    const label = isW ? 'سحب' : 'إيداع';
+    return `<tr style="border-right:3px solid ${color}" onmouseover="this.style.background='${bg}'" onmouseout="this.style.background=''">
+      <td style="${_td};text-align:right">
+        <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:${bg};color:${color};border:1px solid ${color}40">
+          <i class="ti ${icon}" style="font-size:11px;vertical-align:-1px;margin-left:3px"></i>${label}
+        </span>
+      </td>
+      <td style="${_td};text-align:right;font-weight:600;color:#A78BFA">
+        <i class="ti ti-user" style="font-size:11px;vertical-align:-1px;margin-left:4px;opacity:.7"></i>${t.employeeName||'—'}
+      </td>
+      <td style="${_td};text-align:center;font-weight:700;color:${color}">${isW?'-':'+'} ₺${Math.round(t.amount||0).toLocaleString('ar')}</td>
+      <td style="${_td};text-align:right;color:var(--c-text2);font-size:12px">${t.note||'—'}</td>
+      <td style="${_td};text-align:center;font-size:12px;color:var(--c-text3)">${t.date||'—'}</td>
+      <td style="${_td};text-align:left">
+        <button class="btn-sm btn-red" style="padding:4px 9px;font-size:11px;background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3)" onclick="deleteCashboxTransaction('${t.id}')">
+          <i class="ti ti-trash"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('') +
+  `</tbody></table></div>`;
+};
+
+window.openAddCashboxTransactionModal = function() {
+  const emps = (window.state?.employees || []).filter(e => e.role === 'manager');
+  const empOptions = emps.length
+    ? emps.map(e => `<option value="${e.id}" data-name="${e.name}">${e.name}</option>`).join('')
+    : `<option value="" disabled>لا يوجد موظفين بصلاحية مدير</option>`;
+
+  window.setModal(`
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-building-bank" style="vertical-align:-2px;margin-left:6px;color:#F59E0B"></i> إضافة حركة للصندوق</div>
+      <button class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="fg" style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px">نوع الحركة</label>
+      <div style="display:flex;gap:10px">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer;background:var(--c-bg3)" id="cbTxWLabel">
+          <input type="radio" name="cbTxType" value="withdrawal" checked style="accent-color:var(--c-red)" onchange="document.getElementById('cbTxWLabel').style.borderColor='rgba(239,68,68,0.5)';document.getElementById('cbTxDLabel').style.borderColor='var(--c-border)'">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--c-red)"><i class="ti ti-arrow-bar-down" style="font-size:12px;vertical-align:-1px;margin-left:3px"></i>سحب من الدرج</div>
+            <div style="font-size:10px;color:var(--c-text3)">يُخصم من الصندوق</div>
+          </div>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer;background:var(--c-bg3)" id="cbTxDLabel">
+          <input type="radio" name="cbTxType" value="deposit" style="accent-color:#60A5FA" onchange="document.getElementById('cbTxDLabel').style.borderColor='rgba(96,165,250,0.5)';document.getElementById('cbTxWLabel').style.borderColor='var(--c-border)'">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#60A5FA"><i class="ti ti-arrow-bar-up" style="font-size:12px;vertical-align:-1px;margin-left:3px"></i>إيداع في الدرج</div>
+            <div style="font-size:10px;color:var(--c-text3)">يُضاف إلى الصندوق</div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">الموظف المسؤول (مدير فقط)</label>
+      <select id="cbTxEmployee" style="width:100%;padding:11px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:14px;font-family:'Cairo',sans-serif;box-sizing:border-box">
+        <option value="">— اختر موظف —</option>
+        ${empOptions}
+      </select>
+    </div>
+    <div class="fg" style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">المبلغ (₺ ليرة تركي)</label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="padding:10px 12px;background:var(--c-bg3);border:1px solid var(--c-border);border-radius:var(--radius-sm);font-size:16px;font-weight:700;color:#F59E0B">₺</span>
+        <input type="number" id="cbTxAmount" placeholder="0" min="1" step="1"
+          style="flex:1;padding:11px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:18px;font-weight:700;font-family:'Cairo',sans-serif;box-sizing:border-box">
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:16px">
+      <label style="font-size:11px;font-weight:700;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">ملاحظة</label>
+      <input type="text" id="cbTxNote" placeholder="مثلاً: مصاريف كهرباء، تصليح جهاز..."
+        style="width:100%;padding:11px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);background:var(--c-bg3);color:var(--c-text);font-size:13px;font-family:'Cairo',sans-serif;box-sizing:border-box">
+    </div>
+    <button class="btn-primary" style="width:100%;justify-content:center;padding:12px;background:rgba(245,158,11,0.18);border-color:rgba(245,158,11,0.5);color:#F59E0B" onclick="saveCashboxTransaction()">
+      <i class="ti ti-check"></i> حفظ الحركة
+    </button>
+  `);
+  // highlight the default selected radio
+  setTimeout(()=>{
+    const wl = document.getElementById('cbTxWLabel');
+    if(wl) wl.style.borderColor='rgba(239,68,68,0.5)';
+  }, 50);
+};
+
+window.saveCashboxTransaction = async function() {
+  const txTypeEl = document.querySelector('input[name="cbTxType"]:checked');
+  const txType = txTypeEl ? txTypeEl.value : '';
+  const empSel = document.getElementById('cbTxEmployee');
+  const empId = empSel?.value || '';
+  const empName = empSel?.options[empSel.selectedIndex]?.dataset?.name || '';
+  const amount = parseFloat(document.getElementById('cbTxAmount')?.value) || 0;
+  const note = (document.getElementById('cbTxNote')?.value || '').trim();
+
+  if(!txType){ window.showToast('اختر نوع الحركة', 'error'); return; }
+  if(!empId){ window.showToast('اختر الموظف المسؤول', 'error'); return; }
+  if(!amount || amount <= 0){ window.showToast('أدخل مبلغ صحيح', 'error'); return; }
+
+  try {
+    const uid = window._auth?.currentUser?.uid || '';
+    await window._addDoc(window._collection(window._db, 'cashboxTransactions'), {
+      userId: uid,
+      txType,
+      employeeId: empId,
+      employeeName: empName,
+      amount,
+      note,
+      date: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString()
+    });
+    window.closeModal();
+    window.showToast('✓ تم تسجيل الحركة', 'success');
+  } catch(e) { window.showToast('خطأ: ' + e.message, 'error'); }
+};
+
+window.deleteCashboxTransaction = async function(id) {
+  if(!confirm('حذف هذه الحركة نهائياً؟')) return;
+  try {
+    const { doc: _dRef, deleteDoc: _dDel } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
+    await _dDel(_dRef(window._db, 'cashboxTransactions', id));
+    window.showToast('تم الحذف', 'success');
+  } catch(e) { window.showToast('خطأ: ' + e.message, 'error'); }
 };
 
 // =============================================

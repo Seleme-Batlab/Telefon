@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BatLab — من نحن</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0F1117;
+      --bg2:      #161B27;
+      --bg3:      #1E2435;
+      --border:   rgba(255,255,255,0.08);
+      --text:     #F0F2F8;
+      --text2:    #A0A8C0;
+      --text3:    #6B7294;
+      --primary:  #6366F1;
+      --primary2: #4F46E5;
+      --green:    #10B981;
+      --amber:    #F59E0B;
+      --blue:     #3B82F6;
+      --purple:   #8B5CF6;
+      --radius:   16px;
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 28px;
+      background: rgba(15,17,23,0.85);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 20px; font-weight: 900; color: var(--text);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--primary); }
+    .nav-logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--primary2), var(--primary));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-wa {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 18px;
+      background: linear-gradient(135deg, #128C7E, #25D366);
+      border: none; border-radius: 30px;
+      color: #fff; font-size: 14px; font-family: 'Cairo', sans-serif; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: opacity .2s;
+    }
+    .nav-wa:hover { opacity: .88; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 16px;
+      background: rgba(99,102,241,0.12);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 30px;
+      font-size: 13px; font-weight: 700; color: #818CF8;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 7vw, 72px);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #fff 30%, #818CF8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      font-size: clamp(15px, 2.5vw, 20px);
+      color: var(--text2);
+      max-width: 600px;
+      line-height: 1.8;
+      margin-bottom: 40px;
+    }
+    .hero-btns {
+      display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 13px 28px;
+      background: linear-gradient(135deg, var(--primary2), var(--primary));
+      border: none; border-radius: 30px;
+      color: #fff; font-size: 15px; font-family: 'Cairo', sans-serif; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: opacity .2s, transform .15s;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 13px 28px;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 30px;
+      color: var(--text2); font-size: 15px; font-family: 'Cairo', sans-serif; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ── SECTIONS ── */
+    section { padding: 90px 24px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700; color: var(--primary);
+      text-transform: uppercase; letter-spacing: .1em;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 900; color: var(--text);
+      margin-bottom: 14px; line-height: 1.25;
+    }
+    .section-sub {
+      font-size: 16px; color: var(--text2);
+      max-width: 560px; line-height: 1.8;
+      margin-bottom: 52px;
+    }
+
+    /* ── WHO WE ARE ── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .about-visual {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .stat-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    .stat-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 30px; font-weight: 900;
+      background: linear-gradient(135deg, var(--primary), #818CF8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-lbl { font-size: 12px; color: var(--text3); margin-top: 4px; font-weight: 600; }
+    .about-points { display: flex; flex-direction: column; gap: 16px; }
+    .about-point {
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .point-icon {
+      width: 40px; height: 40px; flex-shrink: 0;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .point-icon.purple { background: rgba(139,92,246,0.15); color: #A78BFA; }
+    .point-icon.green  { background: rgba(16,185,129,0.15); color: #34D399; }
+    .point-icon.blue   { background: rgba(59,130,246,0.15); color: #60A5FA; }
+    .point-icon.amber  { background: rgba(245,158,11,0.15); color: #FCD34D; }
+    .point-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .point-desc  { font-size: 13px; color: var(--text3); line-height: 1.6; }
+
+    /* ── SERVICES ── */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 22px;
+    }
+    .service-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      transition: border-color .25s, transform .2s;
+      position: relative; overflow: hidden;
+    }
+    .service-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .service-card.mobile::before { background: linear-gradient(90deg, var(--primary2), var(--primary)); }
+    .service-card.car::before    { background: linear-gradient(90deg, #059669, #10B981); }
+    .service-card.money::before  { background: linear-gradient(90deg, #D97706, #F59E0B); }
+    .service-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-4px); }
+    .svc-icon {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      margin-bottom: 20px;
+    }
+    .svc-icon.mobile { background: rgba(99,102,241,0.15); color: #818CF8; }
+    .svc-icon.car    { background: rgba(16,185,129,0.15);  color: #34D399; }
+    .svc-icon.money  { background: rgba(245,158,11,0.15);  color: #FCD34D; }
+    .svc-name { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .svc-desc { font-size: 14px; color: var(--text2); line-height: 1.75; margin-bottom: 20px; }
+    .svc-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+    .tag {
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+      border: 1px solid;
+    }
+    .tag.purple { background: rgba(99,102,241,0.1);  border-color: rgba(99,102,241,0.3);  color: #818CF8; }
+    .tag.green  { background: rgba(16,185,129,0.1);  border-color: rgba(16,185,129,0.3);  color: #34D399; }
+    .tag.amber  { background: rgba(245,158,11,0.1);  border-color: rgba(245,158,11,0.3);  color: #FCD34D; }
+
+    /* ── OFFER ── */
+    .offer-wrap {
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.06));
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 24px;
+      padding: 60px 40px;
+      text-align: center;
+    }
+    .offer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      margin: 40px 0;
+    }
+    .offer-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 16px;
+    }
+    .offer-item i { font-size: 32px; margin-bottom: 12px; display: block; }
+    .offer-item-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .offer-item-desc  { font-size: 12px; color: var(--text3); line-height: 1.6; }
+
+    /* ── CTA ── */
+    .cta-wrap {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 60px 40px;
+      text-align: center;
+    }
+    .wa-btn-big {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 16px 36px;
+      background: linear-gradient(135deg, #128C7E, #25D366);
+      border: none; border-radius: 30px;
+      color: #fff; font-size: 17px; font-family: 'Cairo', sans-serif; font-weight: 800;
+      cursor: pointer; text-decoration: none;
+      transition: opacity .2s, transform .15s;
+      margin-top: 28px;
+    }
+    .wa-btn-big:hover { opacity: .9; transform: translateY(-2px); }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 28px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text3);
+      font-size: 13px;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      width: 100%; height: 1px;
+      background: var(--border);
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 12px 18px; }
+      .nav-wa span { display: none; }
+      .about-grid { grid-template-columns: 1fr; }
+      .about-visual { order: -1; }
+      section { padding: 60px 18px; }
+      .offer-wrap, .cta-wrap { padding: 40px 20px; }
+    }
+    @media (max-width: 480px) {
+      .hero-btns { flex-direction: column; align-items: center; }
+      .stat-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">
+      <i class="ti ti-layout-dashboard" style="font-size:18px;color:#fff"></i>
+    </div>
+    Bat<span>Lab</span>
+  </a>
+  <a class="nav-wa" href="https://wa.me/905523223191" target="_blank" rel="noopener">
+    <i class="ti ti-brand-whatsapp" style="font-size:18px"></i>
+    <span>تواصل معنا</span>
+  </a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-badge">
+    <i class="ti ti-sparkles"></i>
+    نظام إدارة متكامل لمحلك
+  </div>
+  <h1>نبني نظامك<br>من الألف للياء</h1>
+  <p class="hero-sub">
+    BatLab مكتب متخصص في تطوير أنظمة إدارة المكاتب والمحلات التجارية — من المبيعات والمخزون إلى الحسابات والتقارير، كل شيء بمكان واحد.
+  </p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="https://wa.me/905523223191" target="_blank" rel="noopener">
+      <i class="ti ti-brand-whatsapp"></i>
+      ابدأ الأسبوع المجاني
+    </a>
+    <a class="btn-outline" href="#services">
+      <i class="ti ti-apps"></i>
+      خدماتنا
+    </a>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- WHO WE ARE -->
+<section>
+  <div class="about-grid">
+    <div>
+      <div class="section-label"><i class="ti ti-building"></i> من نحن</div>
+      <h2 class="section-title">فريق متخصص في بناء أنظمة إدارة ذكية</h2>
+      <p class="section-sub">
+        نصمّم ونطوّر أنظمة مخصصة لكل نوع من المحلات والمكاتب، مع دعم كامل وتطوير مستمر يضمن أن نظامك دائماً يواكب احتياجاتك.
+      </p>
+      <div class="about-points">
+        <div class="about-point">
+          <div class="point-icon purple"><i class="ti ti-code"></i></div>
+          <div>
+            <div class="point-title">تطوير مخصص 100%</div>
+            <div class="point-desc">نبني النظام حسب طلبك تماماً، لا حلول جاهزة لا تناسب عملك.</div>
+          </div>
+        </div>
+        <div class="about-point">
+          <div class="point-icon green"><i class="ti ti-headset"></i></div>
+          <div>
+            <div class="point-title">دعم وخدمة شاملة</div>
+            <div class="point-desc">فريق الدعم متاح على مدار الساعة لحل أي مشكلة أو تطوير أي ميزة.</div>
+          </div>
+        </div>
+        <div class="about-point">
+          <div class="point-icon blue"><i class="ti ti-device-mobile"></i></div>
+          <div>
+            <div class="point-title">يعمل على كل الأجهزة</div>
+            <div class="point-desc">من الكمبيوتر إلى أصغر موبايل، النظام متجاوب وسلس على كل الشاشات.</div>
+          </div>
+        </div>
+        <div class="about-point">
+          <div class="point-icon amber"><i class="ti ti-shield-check"></i></div>
+          <div>
+            <div class="point-title">بيانات آمنة على السحابة</div>
+            <div class="point-desc">بياناتك محفوظة ومشفرة على Firebase، لا تخسر شيئاً أبداً.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="about-visual">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-num">+50</div>
+          <div class="stat-lbl">محل يستخدم النظام</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">3</div>
+          <div class="stat-lbl">منتجات متخصصة</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">24/7</div>
+          <div class="stat-lbl">دعم فني</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">7 أيام</div>
+          <div class="stat-lbl">تجربة مجانية</div>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;align-items:center;gap:14px">
+        <div style="width:44px;height:44px;background:rgba(37,211,102,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-brand-whatsapp" style="font-size:22px;color:#25D366"></i>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">تواصل مباشر معنا</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">+90 552 322 3191</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SERVICES -->
+<section id="services" style="max-width:1100px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:52px">
+    <div class="section-label" style="justify-content:center"><i class="ti ti-apps"></i> خدماتنا</div>
+    <h2 class="section-title">منتجات BatLab</h2>
+    <p class="section-sub" style="margin:0 auto">ثلاثة أنظمة متخصصة، كل واحد مصمم لقطاع محدد ومتكامل بالكامل.</p>
+  </div>
+  <div class="services-grid">
+
+    <!-- BatLab Mobile -->
+    <a class="service-card mobile" href="mobileManager.html" style="text-decoration:none;display:block;cursor:pointer">
+      <div class="svc-icon mobile"><i class="ti ti-device-mobile"></i></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="svc-name" style="margin-bottom:0">BatLab Mobile</div>
+        <i class="ti ti-arrow-left" style="font-size:18px;color:#818CF8;opacity:.7"></i>
+      </div>
+      <div class="svc-desc">
+        نظام إدارة متكامل لمحلات الموبايل والاكسسوارات. يشمل المخزون، المبيعات، الديون، الصيانة، وتقارير الأرباح اليومية والشهرية.
+      </div>
+      <div class="svc-tags">
+        <span class="tag purple">مبيعات ومخزون</span>
+        <span class="tag purple">تقارير أرباح</span>
+        <span class="tag purple">إدارة ديون</span>
+        <span class="tag purple">صيانة وفواتير</span>
+      </div>
+    </a>
+
+    <!-- BatLab Car -->
+    <a class="service-card car" href="CarManager.html" style="text-decoration:none;display:block;cursor:pointer">
+      <div class="svc-icon car"><i class="ti ti-car"></i></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="svc-name" style="margin-bottom:0">BatLab Car</div>
+        <i class="ti ti-arrow-left" style="font-size:18px;color:#34D399;opacity:.7"></i>
+      </div>
+      <div class="svc-desc">
+        نظام إدارة مخصص لمعارض ومحلات السيارات. تتبع المركبات، إدارة الصفقات، حسابات الأرباح، وسجل كامل لكل عملية بيع وشراء.
+      </div>
+      <div class="svc-tags">
+        <span class="tag green">إدارة مركبات</span>
+        <span class="tag green">عقود البيع</span>
+        <span class="tag green">حسابات دقيقة</span>
+      </div>
+    </a>
+
+    <!-- BatLab Money Transfer -->
+    <a class="service-card money" href="MoneyManager.html" style="text-decoration:none;display:block;cursor:pointer">
+      <div class="svc-icon money"><i class="ti ti-building-bank"></i></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="svc-name" style="margin-bottom:0">BatLab Money-Transfer</div>
+        <i class="ti ti-arrow-left" style="font-size:18px;color:#FCD34D;opacity:.7"></i>
+      </div>
+      <div class="svc-desc">
+        نظام إدارة لمكاتب الحوالات المالية. تتبع الحوالات الصادرة والواردة، إدارة العملات، سجلات العملاء، وتقارير يومية تفصيلية.
+      </div>
+      <div class="svc-tags">
+        <span class="tag amber">حوالات مالية</span>
+        <span class="tag amber">إدارة عملات</span>
+        <span class="tag amber">سجلات العملاء</span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OFFER -->
+<section style="max-width:1100px;margin:0 auto">
+  <div class="offer-wrap">
+    <div class="section-label" style="justify-content:center"><i class="ti ti-gift"></i> ماذا تحصل</div>
+    <h2 class="section-title">كل شيء شامل من اليوم الأول</h2>
+    <p class="section-sub" style="margin:0 auto;color:var(--text2)">
+      لا مفاجآت، لا تكاليف خفية — كل ما تحتاجه موجود من البداية.
+    </p>
+    <div class="offer-grid">
+      <div class="offer-item">
+        <i class="ti ti-calendar-check" style="color:#818CF8"></i>
+        <div class="offer-item-title">أسبوع مجاني كامل</div>
+        <div class="offer-item-desc">جرّب النظام 7 أيام بدون أي التزام أو دفع مسبق.</div>
+      </div>
+      <div class="offer-item">
+        <i class="ti ti-headset" style="color:#34D399"></i>
+        <div class="offer-item-title">دعم وخدمة شاملة</div>
+        <div class="offer-item-desc">فريقنا جاهز لأي سؤال أو مشكلة في أي وقت.</div>
+      </div>
+      <div class="offer-item">
+        <i class="ti ti-tools" style="color:#60A5FA"></i>
+        <div class="offer-item-title">تطوير مستمر</div>
+        <div class="offer-item-desc">نضيف ونحسّن الميزات بناءً على احتياجاتك باستمرار.</div>
+      </div>
+      <div class="offer-item">
+        <i class="ti ti-device-laptop" style="color:#FCD34D"></i>
+        <div class="offer-item-title">يعمل على كل الأجهزة</div>
+        <div class="offer-item-desc">كمبيوتر، تابلت، موبايل — واجهة سلسة على كل شاشة.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CTA -->
+<section style="max-width:700px;margin:0 auto">
+  <div class="cta-wrap">
+    <div style="width:72px;height:72px;background:rgba(37,211,102,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:1px solid rgba(37,211,102,0.25)">
+      <i class="ti ti-brand-whatsapp" style="font-size:34px;color:#25D366"></i>
+    </div>
+    <h2 class="section-title">جاهز تبدأ؟</h2>
+    <p class="section-sub" style="margin:0 auto">
+      تواصل معنا على واتساب الآن، نسمع طلبك ونبنيلك النظام اللي تحتاجه تماماً.
+    </p>
+    <a class="wa-btn-big" href="https://wa.me/905523223191" target="_blank" rel="noopener">
+      <i class="ti ti-brand-whatsapp" style="font-size:22px"></i>
+      تواصل عبر واتساب الآن
+    </a>
+    <div style="margin-top:18px;font-size:13px;color:var(--text3)">
+      <i class="ti ti-phone" style="vertical-align:-2px"></i>
+      +90 552 322 3191
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div style="margin-bottom:6px;font-weight:700;font-size:15px;color:var(--text2)">BatLab</div>
+  <div>جميع الحقوق محفوظة © 2025 — تطوير أنظمة إدارة المحلات والمكاتب</div>
+</footer>
+
+</body>
+</html>

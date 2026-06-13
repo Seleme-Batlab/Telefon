@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BatLab — تسجيل الدخول</title>
+<link rel="icon" type="image/png" href="logo website.ico"/>
+
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0d0f14;
+    --surface: #141720;
+    --surface2:#1c2030;
+    --border:  #252a3a;
+    --accent:  #c8a84b;
+    --accent2: #e6c96a;
+    --red:     #e05c5c;
+    --text:    #e8eaf0;
+    --text2:   #8b93a8;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%; max-width: 400px;
+    text-align: center;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  .login-logo { font-size: 30px; font-weight: 900; margin-bottom: 6px; }
+  .login-logo span { color: var(--accent); }
+  .login-sub { font-size: 12px; color: var(--text2); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 36px; }
+
+  .login-form { display: flex; flex-direction: column; gap: 14px; margin-top: 28px; }
+  .login-form input {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; color: var(--text);
+    font-family: 'Tajawal', sans-serif; font-size: 14px; outline: none;
+    transition: border-color .2s; text-align: right; width: 100%;
+  }
+  .login-form input:focus { border-color: var(--accent); }
+  .login-form input::placeholder { color: var(--text2); }
+
+  .pass-wrap { position: relative; }
+  .pass-wrap input { padding-left: 42px !important; }
+  .pass-toggle {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--text2); font-size: 18px; line-height: 1;
+    transition: color .15s; padding: 0;
+  }
+  .pass-toggle:hover { color: var(--text); }
+
+  .btn-login {
+    padding: 13px; background: var(--accent); color: #0d0f14;
+    border: none; border-radius: 10px; font-family: 'Tajawal', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: all .2s; margin-top: 4px;
+  }
+  .btn-login:hover { background: var(--accent2); }
+  .btn-login:disabled { opacity: .6; cursor: not-allowed; }
+  .login-err { color: var(--red); font-size: 13px; min-height: 18px; }
+</style>
+</head>
+<body>
+
+<div class="login-box">
+  <div class="login-logo">Bat<span>Lab</span></div>
+  <div class="login-sub">نظام إدارة السيارات</div>
+
+  <div class="login-form">
+    <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" autocomplete="email">
+    <div class="pass-wrap">
+      <input type="password" id="loginPass" placeholder="كلمة المرور" autocomplete="current-password">
+      <button type="button" class="pass-toggle" onclick="togglePass()" tabindex="-1">👁️</button>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <button class="btn-login" id="btnLogin" onclick="doLogin()">دخول</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDf9bzxY78kK4m9p8CpxTf_AtAr-RdjZcA",
+  authDomain: "carmanager-8122e.firebaseapp.com",
+  projectId: "carmanager-8122e",
+  storageBucket: "carmanager-8122e.firebasestorage.app",
+  messagingSenderId: "526368068156",
+  appId: "1:526368068156:web:e1fbbf627b90760dda2939"
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, (user) => {
+  if (user) window.location.replace('CarManager.html');
+});
+
+window.doLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('btnLogin');
+  const err   = document.getElementById('loginErr');
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'يرجى إدخال البريد وكلمة المرور'; return; }
+  btn.disabled = true; btn.textContent = 'جاري الدخول...';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    // onAuthStateChanged سيتولى التحويل لـ CarManager.html
+  } catch(e) {
+    const msgs = { 'auth/user-not-found':'البريد غير مسجل', 'auth/wrong-password':'كلمة المرور خاطئة', 'auth/invalid-email':'بريد غير صحيح', 'auth/invalid-credential':'بيانات غير صحيحة' };
+    err.textContent = msgs[e.code] || e.message;
+    btn.disabled = false; btn.textContent = 'دخول';
+  }
+};
+
+window.togglePass = function() {
+  const inp = document.getElementById('loginPass');
+  const btn = document.querySelector('.pass-toggle');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁️';
+};
+
+document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') window.doLogin(); });
+document.getElementById('loginEmail').addEventListener('keydown', e=>{ if(e.key==='Enter') window.doLogin(); });
+</script>
+
+<div style="position:fixed;bottom:14px;left:18px;display:flex;flex-direction:column;gap:3px">
+  <div style="font-size:10px;color:#8b93a8;opacity:.55">تطوير: مصطفى سلامة</div>
+  <a href="https://wa.me/905523223191" target="_blank"
+     style="font-size:10px;color:#25D366;opacity:.7;text-decoration:none;transition:opacity .2s"
+     onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">
+    ⊕ +905523223191
+  </a>
+</div>
+</body>
+</html>
